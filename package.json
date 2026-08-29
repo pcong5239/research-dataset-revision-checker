@@ -1,0 +1,19 @@
+{
+  "name": "research-dataset-revision-checker",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --config vite.config.js",
+    "build": "vite build --config vite.config.js",
+    "preview": "vite preview --config vite.config.js",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "genlayer-js": "1.1.8"
+  },
+  "devDependencies": {
+    "vite": "5.4.1",
+    "vitest": "2.1.1"
+  }
+}
