@@ -3,8 +3,8 @@
 - Classification: INTENTIONALLY FROZEN — pending explicit user confirmation
 - Network: Studionet
 - Chain/RPC: use the current Studio Studionet configuration at deployment time; record the observed chain ID and RPC in the final manifest
-- Source commit: `ed3443910458209e18489abd9b0919acc0c4ab00`
-- Contract source SHA-256: `BF6C9F438DF11E715D8D72965B485E7563E75E098793FECFBF4AC4BB19B184BD`
+- Source commit: `8bd99b57e12e4b1957bf6f0d1c2dd9f8d35cf089`
+- Contract source SHA-256: `E8D68A485AB835B0F0CB389C0E83D4DB9CB3CB02CEEFB846608D77D8287146DD`
 - Constructor arguments: none
 - Studio deployer/E2E account: `0x34b92E6553eaCA11A00A9d86d75d8a7881779D78`
 - Account role: deployer and Studio E2E operator
