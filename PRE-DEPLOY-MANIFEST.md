@@ -1,6 +1,8 @@
 # PRE_DEPLOY draft manifest
 
-- Classification: INTENTIONALLY FROZEN — pending explicit user confirmation
+- Classification: INTENTIONALLY FROZEN — Codex decision under user-delegated technical authority
+- Decision basis: Stage 2 specifies no upgrade lifecycle; the user delegated primary-AI technical decision authority in this Task.
+- Consequence: a post-deployment defect requires a new contract deployment; no public upgrade method exists.
 - Network: Studionet
 - Chain/RPC: use the current Studio Studionet configuration at deployment time; record the observed chain ID and RPC in the final manifest
 - Source commit: `8bd99b57e12e4b1957bf6f0d1c2dd9f8d35cf089`

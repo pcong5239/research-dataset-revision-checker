@@ -14,4 +14,4 @@ The contract may remain readable, but no recovery or upgrade authority is claime
 
 ## Classification consequence
 
-INTENTIONALLY FROZEN requires explicit user confirmation before deployment. A post-deployment defect requires a new contract deployment; there is no public upgrade method.
+INTENTIONALLY FROZEN was selected by Codex under the user's delegated technical decision authority because Stage 2 specifies no upgrade lifecycle. A post-deployment defect requires a new contract deployment; there is no public upgrade method.
