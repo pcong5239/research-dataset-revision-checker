@@ -1,5 +1,5 @@
 import "./style.css";
-import { createProviderDiscovery } from "./providers.js";
+import { connectSelectedProvider, createProviderDiscovery, switchToChain } from "./providers.js";
 
 const CONTRACT_ADDRESS = import.meta.env.VITE_CONTRACT_ADDRESS || "";
 const discovery = createProviderDiscovery();
@@ -17,6 +17,28 @@ let writeClient = null;
 let sessionCleanup = () => {};
 let initiatingControl = null;
 let lastTxHash = "";
+
+const ACTION_LABELS = {
+  register_case: "Register case",
+  freeze_case: "Freeze case",
+  assess: "Assess case",
+  retry_unresolved: "Retry assessment",
+};
+
+const READBACK_LABELS = {
+  owner: "Owner",
+  dataset_id: "Dataset ID",
+  landing_url: "Landing page",
+  repository_url: "Repository",
+  expected_version: "Expected version",
+  expected_license: "Expected license",
+  state: "Case status",
+  outcome: "Assessment result",
+  repository_commit: "Repository commit",
+  metadata_digest: "Metadata digest",
+  evidence_digest: "Evidence digest",
+  retry_count: "Retry count",
+};
 
 const $ = (selector) => document.querySelector(selector);
 const dialog = $("#walletDialog");
@@ -84,6 +106,16 @@ function setWalletState(label, connected = false) {
   state.classList.toggle("connected", connected);
 }
 
+function chainConfig() {
+  return {
+    id: studionet.id,
+    name: studionet.name,
+    nativeCurrency: studionet.nativeCurrency,
+    rpcUrls: studionet.rpcUrls.default.http,
+    blockExplorerUrls: [studionet.blockExplorers.default.url],
+  };
+}
+
 function renderTransaction(hash, label) {
   const element = $("#transactionStatus");
   element.replaceChildren();
@@ -105,7 +137,7 @@ function renderProviders(options) {
   if (!options.length) {
     const empty = document.createElement("p");
     empty.className = "muted";
-    empty.textContent = "No supported injected provider detected. Install MetaMask, OKX Wallet, or Rabby, then reload.";
+    empty.textContent = "No supported wallet is available in this browser.";
     providerOptions.append(empty);
     return;
   }
@@ -113,7 +145,23 @@ function renderProviders(options) {
     const button = document.createElement("button");
     button.type = "button";
     button.className = "provider-option";
-    button.textContent = option.label;
+    const icon = document.createElement("img");
+    icon.src = option.icon;
+    icon.alt = "";
+    icon.width = 40;
+    icon.height = 40;
+    const copy = document.createElement("span");
+    copy.className = "provider-copy";
+    const name = document.createElement("strong");
+    name.textContent = option.label;
+    const detail = document.createElement("small");
+    detail.textContent = "Browser wallet";
+    copy.append(name, detail);
+    const arrow = document.createElement("span");
+    arrow.className = "provider-arrow";
+    arrow.setAttribute("aria-hidden", "true");
+    arrow.textContent = "›";
+    button.append(icon, copy, arrow);
     button.addEventListener("click", () => connect(option));
     providerOptions.append(button);
   });
@@ -121,21 +169,33 @@ function renderProviders(options) {
 
 async function connect(option) {
   $("#walletError").textContent = "";
+  providerOptions.setAttribute("aria-busy", "true");
   try {
     await loadSdk();
-    const accounts = await option.provider.request({ method: "eth_requestAccounts" });
-    if (!Array.isArray(accounts) || !accounts[0]) throw new Error("The wallet returned no account.");
+    const session = await connectSelectedProvider(option, chainConfig());
     sessionCleanup();
-    account = String(accounts[0]).toLowerCase();
-    selected = option.provider;
+    account = session.account;
+    selected = session.provider;
     writeClient = createClient({ chain: studionet, account, provider: selected });
     const onAccountsChanged = (next) => {
-      account = Array.isArray(next) && next[0] ? String(next[0]).toLowerCase() : "";
-      writeClient = account ? createClient({ chain: studionet, account, provider: selected }) : null;
-      setWalletState(account ? option.label : "Disconnected", Boolean(account));
-      notice(account ? "Wallet account changed; verify the actor before writing." : "Wallet disconnected.", account ? "warning" : "");
+      if (!Array.isArray(next) || !next[0] || !/^0x[0-9a-fA-F]{40}$/.test(String(next[0]))) {
+        clearWalletSession("Wallet disconnected. Choose a wallet to reconnect.");
+        return;
+      }
+      account = String(next[0]).toLowerCase();
+      writeClient = createClient({ chain: studionet, account, provider: selected });
+      setWalletState(option.label, true);
+      notice("Wallet account changed. Review the active account before continuing.", "warning");
     };
-    const onChainChanged = (chainId) => notice(`Wallet network changed to ${String(chainId)}. Studionet writes require chain ${studionet.id}.`, "warning");
+    const onChainChanged = (chainId) => {
+      if (String(chainId).toLowerCase() === `0x${studionet.id.toString(16)}`) {
+        writeClient = createClient({ chain: studionet, account, provider: selected });
+        notice("Wallet network is ready.", "success");
+        return;
+      }
+      writeClient = null;
+      notice("Wallet network changed. Reconnect on the supported network before writing.", "warning");
+    };
     const onDisconnect = () => onAccountsChanged([]);
     selected.on?.("accountsChanged", onAccountsChanged);
     selected.on?.("chainChanged", onChainChanged);
@@ -147,10 +207,22 @@ async function connect(option) {
     };
     setWalletState(option.label, true);
     dialog.close();
-    notice("Wallet selected. The write client is bound to this provider and account.");
+    notice("Wallet connected.", "success");
   } catch (error) {
     $("#walletError").textContent = errorMessage(error);
+  } finally {
+    providerOptions.removeAttribute("aria-busy");
   }
+}
+
+function clearWalletSession(message) {
+  sessionCleanup();
+  sessionCleanup = () => {};
+  selected = null;
+  writeClient = null;
+  account = "";
+  setWalletState("Disconnected");
+  if (message) notice(message, "warning");
 }
 
 async function ensureWriteReady() {
@@ -158,10 +230,11 @@ async function ensureWriteReady() {
   requireAddress();
   if (!selected || !writeClient || !account) throw new Error("Choose a wallet before writing.");
   const currentChain = await selected.request({ method: "eth_chainId" });
-  if (Number.parseInt(currentChain, 16) !== studionet.id) {
-    await writeClient.connect("studionet");
+  if (String(currentChain).toLowerCase() !== `0x${studionet.id.toString(16)}`) {
+    await switchToChain(selected, chainConfig());
     const afterSwitch = await selected.request({ method: "eth_chainId" });
-    if (Number.parseInt(afterSwitch, 16) !== studionet.id) throw new Error("Wallet is not connected to Studionet.");
+    if (String(afterSwitch).toLowerCase() !== `0x${studionet.id.toString(16)}`) throw new Error("Wallet network is not ready.");
+    writeClient = createClient({ chain: studionet, account, provider: selected });
   }
   const balance = await readClient.getBalance({ address: account });
   if (balance === 0n) throw new Error("This wallet has no GEN for the transaction.");
@@ -169,19 +242,20 @@ async function ensureWriteReady() {
 
 async function write(functionName, args, datasetId) {
   await ensureWriteReady();
-  notice(`Requesting wallet signature for ${functionName}…`);
+  const action = ACTION_LABELS[functionName] || "Continue";
+  notice(`Confirm ${action.toLowerCase()} in your wallet.`);
   const txHash = await writeClient.writeContract({ address: requireAddress(), functionName, args, value: 0n });
   lastTxHash = txHash;
-  renderTransaction(txHash, "Awaiting finality");
-  notice(`Submitted ${functionName}. Transaction: ${txHash}`);
+  renderTransaction(txHash, "Waiting for confirmation");
+  notice(`${action} submitted.`);
   const receipt = await readClient.waitForTransactionReceipt({ hash: txHash, status: TransactionStatus.FINALIZED, interval: 3000, retries: 50 });
   if (receipt.txExecutionResultName !== ExecutionResult.FINISHED_WITH_RETURN) {
     throw new Error(`Finalized transaction did not succeed: ${receipt.txExecutionResultName || "unknown execution result"}.`);
   }
   invalidateCase(datasetId);
   await loadCase(datasetId);
-  renderTransaction(txHash, "Finalized with successful execution");
-  notice(`${functionName} finalized with successful execution and authoritative readback.`, "success");
+  renderTransaction(txHash, "Confirmed");
+  notice(`${action} confirmed. Case details were refreshed.`, "success");
 }
 
 async function loadCase(datasetId) {
@@ -192,7 +266,7 @@ async function loadCase(datasetId) {
     const row = document.createElement("div");
     row.className = "readback-row";
     const label = document.createElement("span");
-    label.textContent = key;
+    label.textContent = READBACK_LABELS[key] || key;
     const content = document.createElement("strong");
     content.textContent = String(item);
     row.append(label, content);
@@ -221,10 +295,18 @@ $("#connectButton").addEventListener("click", () => {
   discovery.request();
   renderProviders(discovery.getOptions());
   dialog.showModal();
-  setTimeout(() => providerOptions.querySelector("button")?.focus(), 0);
+  setTimeout(() => (providerOptions.querySelector("button") || $("#cancelDialog")).focus(), 0);
 });
 $("#closeDialog").addEventListener("click", () => dialog.close());
+$("#cancelDialog").addEventListener("click", () => dialog.close());
 dialog.addEventListener("close", () => initiatingControl?.focus());
+dialog.addEventListener("cancel", (event) => {
+  event.preventDefault();
+  dialog.close();
+});
+dialog.addEventListener("click", (event) => {
+  if (event.target === dialog) dialog.close();
+});
 discovery.subscribe(renderProviders);
 
 $("#registerForm").addEventListener("submit", async (event) => {
@@ -251,5 +333,4 @@ for (const [id, method] of [["freezeButton", "freeze_case"], ["assessButton", "a
   });
 }
 
-if (!CONTRACT_ADDRESS) notice("Frontend configuration is incomplete: set VITE_CONTRACT_ADDRESS for this deployment.", "warning");
 setWalletState("Disconnected");

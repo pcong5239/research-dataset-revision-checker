@@ -16,7 +16,7 @@
         </div>
         <div class="wallet-block">
           <span id="walletState" class="status-dot">Disconnected</span>
-          <button id="connectButton" class="button button-dark" type="button">Choose wallet</button>
+          <button id="connectButton" class="button button-dark" type="button">Connect wallet</button>
         </div>
       </header>
 
@@ -41,7 +41,7 @@
 
         <section class="panel">
           <p class="eyebrow">02 / RUN THE CHECK</p>
-          <h2>Freeze, assess, read back</h2>
+          <h2>Freeze, assess, view details</h2>
           <p class="muted">Assessment is permissionless. A failed source fetch stays unresolved and can be retried deliberately.</p>
           <form id="caseForm" class="form-stack compact-form">
             <label>Dataset ID<input id="caseId" name="dataset_id" required maxlength="256" placeholder="dataset-name" /></label>
@@ -50,7 +50,7 @@
               <button id="assessButton" class="button button-primary" type="button">Assess</button>
               <button id="retryButton" class="button button-secondary" type="button">Retry unresolved</button>
             </div>
-            <button id="lookupButton" class="button button-quiet" type="submit">Load authoritative readback</button>
+          <button id="lookupButton" class="button button-quiet" type="submit">View saved case details</button>
           </form>
           <div id="transactionStatus" class="transaction-status" aria-live="polite"></div>
           <div id="caseReadback" class="readback" aria-live="polite">
@@ -67,12 +67,13 @@
       </section>
     </div>
 
-    <dialog id="walletDialog" aria-labelledby="walletDialogTitle">
+    <dialog id="walletDialog" aria-modal="true" aria-labelledby="walletDialogTitle">
       <div class="dialog-card">
-        <div class="dialog-heading"><div><p class="eyebrow">WALLET SELECTOR</p><h2 id="walletDialogTitle">Choose a provider</h2></div><button id="closeDialog" class="icon-button" type="button" aria-label="Close wallet selector">×</button></div>
-        <p class="muted">Opening this chooser does not request accounts. Select a detected provider to connect.</p>
+        <div class="dialog-heading"><div><p class="eyebrow">WALLET SELECTOR</p><h2 id="walletDialogTitle">Choose a wallet</h2></div><button id="closeDialog" class="icon-button" type="button" aria-label="Close wallet selector">×</button></div>
+        <p class="muted">Choose a wallet to continue.</p>
         <div id="providerOptions" class="provider-list"></div>
         <p id="walletError" class="inline-error" role="alert"></p>
+        <button id="cancelDialog" class="cancel-link" type="button">Cancel</button>
       </div>
     </dialog>
 
