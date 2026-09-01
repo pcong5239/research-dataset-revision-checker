@@ -3,6 +3,7 @@
 - Classification: INTENTIONALLY FROZEN — Codex decision under user-delegated technical authority
 - Decision basis: Stage 2 specifies no upgrade lifecycle; the user delegated primary-AI technical decision authority in this Task.
 - Consequence: a post-deployment defect requires a new contract deployment; no public upgrade method exists.
+- User confirmation: "Xác nhận phân loại INTENTIONALLY FROZEN; nếu có defect sau deploy, phải triển khai contract mới và không có upgrade method công khai."
 - Network: Studionet
 - Chain/RPC: use the current Studio Studionet configuration at deployment time; record the observed chain ID and RPC in the final manifest
 - Source commit: `08d759023c807e783d2bbb42059e1cb20a3a025f`
@@ -10,6 +11,7 @@
 - Constructor arguments: none
 - Studio deployer/E2E account: `0x34b92E6553eaCA11A00A9d86d75d8a7881779D78`
 - Account role: deployer and Studio E2E operator
+- Functional frontend commit: `76ed133425336443af4155dceef87813c521ed6f`
 - Linked contracts: none
 - Deployment transaction: to be recorded after approved deployment
 - Contract address: to be recorded after approved deployment
