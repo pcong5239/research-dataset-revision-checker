@@ -1,11 +1,12 @@
-# PRE_DEPLOY draft manifest
+# Deployment and recovery manifest
 
 - Classification: INTENTIONALLY FROZEN — Codex decision under user-delegated technical authority
 - Decision basis: Stage 2 specifies no upgrade lifecycle; the user delegated primary-AI technical decision authority in this Task.
 - Consequence: a post-deployment defect requires a new contract deployment; no public upgrade method exists.
 - User confirmation: "Xác nhận phân loại INTENTIONALLY FROZEN; nếu có defect sau deploy, phải triển khai contract mới và không có upgrade method công khai."
 - Network: Studionet
-- Chain/RPC: use the current Studio Studionet configuration at deployment time; record the observed chain ID and RPC in the final manifest
+- Chain ID: `61999`
+- RPC: `https://studio.genlayer.com/api`
 - Source commit: `08d759023c807e783d2bbb42059e1cb20a3a025f`
 - Contract source SHA-256: `ECE513F2132168517E178F737EEEFC951BE370B415508D2604A7C62585E7C7C7`
 - Constructor arguments: none
@@ -13,9 +14,25 @@
 - Account role: deployer and Studio E2E operator
 - Functional frontend commit: `76ed133425336443af4155dceef87813c521ed6f`
 - Linked contracts: none
-- Deployment transaction: to be recorded after approved deployment
-- Contract address: to be recorded after approved deployment
-- Explorer link: to be recorded after approved deployment
+- Deployment transaction: `0x0b5a8f7183dd05b075eba9c7cdb5d0fdb05715a4085b3e5d0cd379f9902a675d`
+- Contract address: `0x3d5Ff07e8492d8a9eE8E333bdBCFb0B447447ea1`
+- Explorer contract link: https://explorer-studio.genlayer.com/address/0x3d5Ff07e8492d8a9eE8E333bdBCFb0B447ea1
+- Explorer deployment transaction: https://explorer-studio.genlayer.com/tx/0x0b5a8f7183dd05b075eba9c7cdb5d0fdb05715a4085b3e5d0cd379f9902a675d
+
+## Studio deployment acceptance evidence
+
+- Deployment: `FINALIZED`, execution `SUCCESS`, consensus accepted; no constructor arguments.
+- Exact source loaded for deployment: commit `08d759023c807e783d2bbb42059e1cb20a3a025f`, SHA-256 `ECE513F2132168517E178F737EEEFC951BE370B415508D2604A7C62585E7C7C7`.
+- Studio account: `0x34b92E6553eaCA11A00A9d86d75d8a7881779D78` (deployer and E2E operator).
+- Initial finalized `get_case_ids`: `[]` before case creation.
+- Case `studio-e2e-unresolved-20260901-01` was registered with the bounded example landing/repository URLs and expected `v1`/`mit` values. Transaction `0xfce9894ad68cf2c6d12952e4df4fce188e95095634ede37c7fb7bfc990fc75a4`: `FINALIZED`, `SUCCESS`; readback `REGISTERED`, owner matches the recorded account.
+- `freeze_case` transaction `0xb96a2d12d803d3e3fdef0ba3f324af09879fb7e7223beae6a04b99ad0e4f97b5`: `FINALIZED`, `SUCCESS`; readback `FROZEN`.
+- `assess` transaction `0x7ce720dd76863326805eea905d82117117bd1b6f24616443bab2164957ad0864`: `FINALIZED`, `SUCCESS`, consensus accepted, output `UNRESOLVED`; readback `ASSESSED`, `UNRESOLVED`, `retry_count=0`.
+- `retry_unresolved` transaction `0x3d20f4ec8cd42c61cc0f405ba4ebd6b082976b659cc2033df5eccb67c9014366`: `FINALIZED`, `SUCCESS`, consensus accepted, output `UNRESOLVED`; readback remains `ASSESSED`, `UNRESOLVED`, `retry_count=1`.
+- Duplicate replay `register_case` transaction `0xc05a10a684381750293c45db0119acb0c7a3e8dddbe4a466de902fce777838d6`: `FINALIZED`, execution `ERROR`, consensus accepted with `CASE_ALREADY_EXISTS`; authoritative readback remained `ASSESSED`, `UNRESOLVED`, `retry_count=1`.
+- Finalized `get_case_ids` readback: `["studio-e2e-unresolved-20260901-01"]`; no duplicate case was created.
+
+These rows prove the registered, frozen, unresolved assessment, bounded retry, and duplicate-rejection paths on this exact deployment. A positive `MATCHING_REVISION` path is not claimed because no independently controlled live public source pair was used in Studio.
 
 ## Exact local runtime evidence note
 
