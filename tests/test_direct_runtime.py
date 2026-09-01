@@ -62,8 +62,8 @@ def test_direct_runtime_roundtrips_storage_and_captures_equivalence_validator(
     contract.assess("DS-1")
     assert contract.get_case("DS-1")["outcome"] == "MATCHING_REVISION"
 
-    # gltest 0.39.2's Direct Mode sandbox decoder currently cannot decode the
-    # strict_eq validator's nested sandbox response. Exercise the actual SDK
+    # genlayer-test 0.29.2 Direct Mode's nested sandbox decoder currently
+    # cannot decode the strict_eq validator response. Exercise the actual SDK
     # validator with the sandbox boundary reduced to a direct call.
     import genlayer.gl.vm as gl_vm
 

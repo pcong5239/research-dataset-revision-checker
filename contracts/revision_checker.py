@@ -113,7 +113,9 @@ def _repository_identity(repository_url: str) -> typing.Tuple[str, str]:
 
 def _fetch_source(url: str, landing: bool) -> typing.Dict[str, typing.Any]:
     response = gl.nondet.web.get(url)
-    status = response.status
+    status = getattr(response, "status", None)
+    if status is None:
+        status = getattr(response, "status_code", None)
     if status != 200:
         return {"status": "UNAVAILABLE"}
     try:

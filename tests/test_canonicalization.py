@@ -84,6 +84,12 @@ class _Response:
         self.body = body
 
 
+class _DocumentedResponse:
+    def __init__(self, status_code, body):
+        self.status_code = status_code
+        self.body = body
+
+
 def test_missing_required_metadata_is_distinguished_from_malformed_json():
     mod["gl"].nondet.web = types.SimpleNamespace(
         get=lambda _url: _Response(200, json.dumps({"dataset_id": "DS-1"}).encode("utf-8"))
@@ -200,3 +206,24 @@ def test_unavailable_or_malformed_source_takes_precedence_over_missing_metadata(
     malformed = _Response(200, b"not-json")
     assert outcome(missing, unavailable) == "UNRESOLVED"
     assert outcome(missing, malformed) == "UNRESOLVED"
+
+
+def test_documented_status_code_shape_is_supported():
+    mod["gl"].eq_principle.strict_eq = lambda fn: fn()
+    landing = _DocumentedResponse(200, json.dumps({
+        "dataset_id": "DS-1", "version": "v1", "license_id": "mit",
+        "release_ref": "v1", "commit_id": "abc123",
+        "repository_url": "https://github.com/org/repo",
+    }).encode("utf-8"))
+    repository = _DocumentedResponse(200, json.dumps({
+        "dataset_id": "DS-1", "version": "v1", "license_id": "mit",
+        "release_ref": "v1", "commit_id": "abc123",
+        "repository_owner": "org", "repository_name": "repo",
+    }).encode("utf-8"))
+    responses = {"landing": landing, "repository": repository}
+    mod["gl"].nondet.web = types.SimpleNamespace(
+        get=lambda url: responses["landing" if "landing" in url else "repository"]
+    )
+    assert json.loads(mod["_collect_evidence"](
+        "https://example.com/landing", "https://github.com/org/repo", "v1", "mit"
+    ))["outcome"] == "MATCHING_REVISION"
