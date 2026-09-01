@@ -80,7 +80,7 @@ def test_repository_identity_uses_canonical_path():
 
 class _Response:
     def __init__(self, status_code, body):
-        self.status_code = status_code
+        self.status = status_code
         self.body = body
 
 
@@ -106,6 +106,8 @@ def test_unavailable_statuses_fail_closed():
 
 def test_unresolved_assessment_can_only_be_retried_explicitly():
     contract = mod["RevisionChecker"]()
+    contract.cases = {}
+    contract.case_ids = []
     mod["gl"].message.sender_address = "0xowner"
     contract.register_case("DS-1", "https://example.com/landing", "https://github.com/org/repo", "v1", "mit")
     contract.freeze_case("DS-1")
@@ -179,3 +181,22 @@ def test_consensus_result_separates_revision_license_and_metadata_failures():
     assert assess(base_landing, revised) == "REVISION_MISMATCH"
     assert assess(base_landing, licensed) == "LICENSE_MISMATCH"
     assert assess(base_landing, missing) == "METADATA_MISSING"
+
+
+def test_unavailable_or_malformed_source_takes_precedence_over_missing_metadata():
+    mod["gl"].eq_principle.strict_eq = lambda fn: fn()
+
+    def outcome(landing, repository):
+        responses = {"landing": landing, "repository": repository}
+        mod["gl"].nondet.web = types.SimpleNamespace(
+            get=lambda url: responses["landing" if "landing" in url else "repository"]
+        )
+        return json.loads(mod["_collect_evidence"](
+            "https://example.com/landing", "https://github.com/org/repo", "v1", "mit"
+        ))["outcome"]
+
+    missing = _Response(200, json.dumps({"dataset_id": "DS-1"}).encode("utf-8"))
+    unavailable = _Response(429, b"")
+    malformed = _Response(200, b"not-json")
+    assert outcome(missing, unavailable) == "UNRESOLVED"
+    assert outcome(missing, malformed) == "UNRESOLVED"

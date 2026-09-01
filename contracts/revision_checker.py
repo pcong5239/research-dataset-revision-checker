@@ -113,7 +113,7 @@ def _repository_identity(repository_url: str) -> typing.Tuple[str, str]:
 
 def _fetch_source(url: str, landing: bool) -> typing.Dict[str, typing.Any]:
     response = gl.nondet.web.get(url)
-    status = response.status_code
+    status = response.status
     if status != 200:
         return {"status": "UNAVAILABLE"}
     try:
@@ -141,6 +141,8 @@ def _collect_evidence(
         landing = _fetch_source(landing_url, True)
         repository = _fetch_source(repository_url, False)
         statuses = {landing.get("status"), repository.get("status")}
+        if statuses.intersection({"UNAVAILABLE", "MALFORMED"}):
+            return _canonical_json({"outcome": "UNRESOLVED"})
         if "MISSING" in statuses:
             return _canonical_json({"outcome": "METADATA_MISSING"})
         if statuses != {"OK"}:
@@ -193,8 +195,7 @@ class RevisionChecker(gl.Contract):
     case_ids: DynArray[str]
 
     def __init__(self):
-        self.cases = TreeMap()
-        self.case_ids = DynArray()
+        pass
 
     @gl.public.write
     def register_case(
