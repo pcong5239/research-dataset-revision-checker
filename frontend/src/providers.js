@@ -125,12 +125,12 @@ export function createProviderDiscovery(root = window) {
 
   const discoverLegacy = () => {
     const injected = root.ethereum;
+    const collected = Array.isArray(injected?.providers) ? injected.providers : [];
+    const named = [root.metamask, root.okxwallet, root.rabby].filter(isProvider);
     const candidates = [
-      ...(Array.isArray(injected?.providers) ? injected.providers : []),
-      injected,
-      root.metamask,
-      root.okxwallet,
-      root.rabby,
+      ...collected,
+      ...named,
+      ...(collected.length === 0 && named.length === 0 ? [injected] : []),
     ].filter(isProvider);
     for (const provider of new Set(candidates)) {
       const wallet = walletFromLegacyFlags(provider);

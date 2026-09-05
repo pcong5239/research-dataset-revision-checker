@@ -1,6 +1,31 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" role="img" aria-label="MetaMask">
-  <path fill="#e17726" d="M7 6 22 17l2-7 2 7L41 6l-4 20-8 5-5 10-5-10-8-5z"/>
-  <path fill="#f6851b" d="m7 6 8 18 8 4-1-11zM41 6l-8 18-8 4 1-11z"/>
-  <path fill="#c05b25" d="m15 24 8 4-3 4-6-2zM33 24l-8 4 3 4 6-2z"/>
-  <path fill="#763d20" d="m20 32 4 2 4-2-4 8z"/>
+  <!-- Outer / Ear geometry -->
+  <polygon points="5.5,7 18.2,16.5 13,5" fill="#E2761B"/>
+  <polygon points="42.5,7 29.8,16.5 35,5" fill="#E2761B"/>
+  <polygon points="18.2,16.5 24,11 29.8,16.5 24,7" fill="#E4751F"/>
+  <!-- Ear cavities -->
+  <polygon points="13,5 18.2,16.5 10,18" fill="#161616"/>
+  <polygon points="35,5 29.8,16.5 38,18" fill="#161616"/>
+  <!-- Cheeks / Sides -->
+  <polygon points="5.5,7 10,18 7,27 4,16" fill="#F6851B"/>
+  <polygon points="42.5,7 38,18 41,27 44,16" fill="#F6851B"/>
+  <polygon points="10,18 18.2,16.5 19,25.5 12,27.5 7,27" fill="#E2761B"/>
+  <polygon points="38,18 29.8,16.5 29,25.5 36,27.5 41,27" fill="#E2761B"/>
+  <!-- Central forehead & bridge -->
+  <polygon points="18.2,16.5 24,20 29.8,16.5 24,11" fill="#F6851B"/>
+  <polygon points="18.2,16.5 19,25.5 24,20" fill="#E4751F"/>
+  <polygon points="29.8,16.5 29,25.5 24,20" fill="#E4751F"/>
+  <!-- Snout / Nose bridge -->
+  <polygon points="19,25.5 24,20 29,25.5 24,31.5" fill="#F6851B"/>
+  <!-- Whiskers / lower cheek plates -->
+  <polygon points="12,27.5 19,25.5 19.5,33 13.5,36" fill="#CD6116"/>
+  <polygon points="36,27.5 29,25.5 28.5,33 34.5,36" fill="#CD6116"/>
+  <!-- Snout sides -->
+  <polygon points="19,25.5 24,31.5 19.5,33" fill="#E4751F"/>
+  <polygon points="29,25.5 24,31.5 28.5,33" fill="#E4751F"/>
+  <!-- Lower muzzle & nose -->
+  <polygon points="19.5,33 24,31.5 28.5,33 24,37.5" fill="#233447"/>
+  <polygon points="19.5,33 24,37.5 17.5,41 13.5,36" fill="#D7C1B3"/>
+  <polygon points="28.5,33 24,37.5 30.5,41 34.5,36" fill="#D7C1B3"/>
+  <polygon points="24,37.5 17.5,41 24,44 30.5,41" fill="#C0AD9E"/>
 </svg>

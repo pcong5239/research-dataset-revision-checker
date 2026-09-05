@@ -139,8 +139,10 @@ function invalidateCase(datasetId) {
 
 function setWalletState(label, connected = false) {
   const state = $("#walletState");
+  const action = $("#connectButton");
   state.textContent = connected ? `${label} · ${account.slice(0, 6)}…${account.slice(-4)}` : label;
   state.classList.toggle("connected", connected);
+  action.textContent = connected ? "Disconnect" : "Connect wallet";
 }
 
 function chainConfig() {
@@ -225,7 +227,7 @@ function renderProviders(options) {
   providerOptions.replaceChildren();
   if (!options.length) {
     const empty = document.createElement("p");
-    empty.className = "muted";
+    empty.className = "muted wallet-empty";
     empty.textContent = "No supported wallet is available in this browser.";
     providerOptions.append(empty);
     return;
@@ -238,17 +240,19 @@ function renderProviders(options) {
     const icon = document.createElement("img");
     icon.src = option.icon;
     icon.alt = "";
-    icon.width = 40;
-    icon.height = 40;
+    icon.width = 42;
+    icon.height = 42;
+    icon.className = "provider-icon";
     const copy = document.createElement("span");
     copy.className = "provider-copy";
     const name = document.createElement("strong");
+    name.className = "provider-name";
     name.textContent = option.label;
     copy.append(name);
     const arrow = document.createElement("span");
     arrow.className = "provider-arrow";
     arrow.setAttribute("aria-hidden", "true");
-    arrow.textContent = "›";
+    arrow.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>`;
     button.append(icon, copy, arrow);
     button.addEventListener("click", () => connect(option));
     providerOptions.append(button);
@@ -465,12 +469,28 @@ async function loadCase(datasetId) {
   const value = await readContract("get_case", [datasetId]);
   const readback = $("#caseReadback");
   readback.replaceChildren();
-  Object.entries(value || {}).forEach(([key, item]) => {
+  const entries = Object.entries(value || {});
+  if (!entries.length) {
+    const empty = document.createElement("p");
+    empty.className = "muted";
+    empty.textContent = "No case loaded yet.";
+    readback.append(empty);
+    return value;
+  }
+  entries.forEach(([key, item]) => {
     const row = document.createElement("div");
     row.className = "readback-row";
     const label = document.createElement("span");
+    label.className = "readback-label";
     label.textContent = READBACK_LABELS[key] || key;
     const content = document.createElement("strong");
+    content.className = "readback-value";
+    if (key === "state" || key === "outcome") {
+      content.classList.add("readback-badge-val");
+      content.setAttribute("data-status", String(item).toLowerCase());
+    } else if (key.includes("digest") || key === "owner" || key === "repository_commit") {
+      content.classList.add("readback-code-val");
+    }
     content.textContent = String(item);
     row.append(label, content);
     readback.append(row);
@@ -480,7 +500,8 @@ async function loadCase(datasetId) {
     link.href = `${studionet.blockExplorers.default.url}/tx/${lastTxHash}`;
     link.target = "_blank";
     link.rel = "noreferrer";
-    link.textContent = "View transaction";
+    link.className = "readback-tx-link";
+    link.textContent = "View verified transaction on explorer →";
     readback.append(link);
   }
   return value;
@@ -506,6 +527,10 @@ function restorePendingWrite() {
 }
 
 $("#connectButton").addEventListener("click", () => {
+  if (selected) {
+    clearWalletSession("Wallet disconnected.");
+    return;
+  }
   initiatingControl = $("#connectButton");
   $("#walletError").textContent = "";
   discovery.request();

@@ -3,107 +3,207 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Check whether a dataset landing page and canonical repository describe the same revision." />
-    <title>Revision Checker</title>
+    <meta name="description" content="Research Dataset Revision Checker: Decentralized provenance verification binding dataset landing pages to canonical repositories." />
+    <title>Research Dataset Revision Checker</title>
   </head>
   <body>
     <div class="shell">
-      <header class="hero">
-        <div>
-          <p class="eyebrow">GENLAYER / EVIDENCE BOUNDARY</p>
-          <h1>Freeze the revision. Verify the story.</h1>
-          <p class="lede">Bind a dataset landing page to its canonical repository, then let validators check the exact version, release, commit, and license.</p>
+      <!-- Top Navigation & Brand Header -->
+      <header class="app-header">
+        <div class="brand-cluster">
+          <img src="/brand-mark.svg" alt="" class="brand-logo" width="38" height="38" />
+          <div class="brand-titles">
+            <span class="brand-name">Research Dataset Revision Checker</span>
+            <span class="brand-tagline">GenLayer provenance verification</span>
+          </div>
         </div>
-        <div class="wallet-block">
-          <span id="walletState" class="status-dot">Disconnected</span>
-          <button id="connectButton" class="button button-dark" type="button">Connect wallet</button>
+        <div class="header-actions">
+          <div class="wallet-block">
+            <span id="walletState" class="status-dot">Disconnected</span>
+            <button id="connectButton" class="button button-connect" type="button">Connect wallet</button>
+          </div>
         </div>
       </header>
 
-      <nav class="quick-nav" aria-label="Page sections">
-        <a href="#how-it-works">How it works</a>
-        <a href="#registerForm">Register a case</a>
-        <a href="#caseForm">Check a case</a>
-      </nav>
+      <!-- Hero Banner -->
+      <section class="hero">
+        <div class="hero-content">
+          <div class="badge-pill">Consensus Evidence Boundary</div>
+          <h1 class="hero-title">Freeze the revision.<br />Verify the provenance.</h1>
+          <p class="lede">Bind a research dataset landing page to its canonical code repository. Decentralized validators independently assess version alignment, release commits, and license integrity.</p>
+        </div>
 
+        <nav class="quick-nav" aria-label="Page sections">
+          <a href="#how-it-works" class="nav-chip">How it works</a>
+          <a href="#registerForm" class="nav-chip">Register case</a>
+          <a href="#caseForm" class="nav-chip">Assess &amp; verify</a>
+        </nav>
+      </section>
+
+      <!-- Global Notice Banner -->
       <div id="globalNotice" class="notice" role="status" aria-live="polite"></div>
 
+      <!-- Main Dual Workflows -->
       <main class="grid">
-        <section class="panel panel-accent">
-          <p class="eyebrow">01 / CREATE A BOUNDARY</p>
-          <h2>Register a dataset case</h2>
-          <p class="muted">Only bounded references and expected metadata are stored. Source bodies never enter contract state.</p>
+        <!-- Section 1: Case Registration -->
+        <section class="panel panel-intake" aria-labelledby="intake-title">
+          <div class="panel-header">
+            <span class="step-badge">Phase 01</span>
+            <h2 id="intake-title">Register dataset case</h2>
+            <p class="panel-desc">Establish an immutable evidence boundary. Only bounded references and expected metadata digests are recorded for independent verification; raw source bodies are never stored.</p>
+          </div>
           <form id="registerForm" class="form-stack">
-            <label>Dataset ID<input name="dataset_id" required maxlength="256" placeholder="dataset-name" /></label>
-            <label>Landing page URL<input name="landing_url" required type="url" placeholder="https://example.org/dataset" /></label>
-            <label>Canonical repository URL<input name="repository_url" required type="url" placeholder="https://github.com/owner/repository" /></label>
-            <div class="two-up">
-              <label>Expected version<input name="expected_version" required maxlength="256" placeholder="v1.0.0" /></label>
-              <label>Expected license<input name="expected_license" required maxlength="256" placeholder="mit" /></label>
+            <div class="field-group">
+              <label for="reg-dataset-id">Dataset ID</label>
+              <input id="reg-dataset-id" name="dataset_id" required maxlength="256" placeholder="e.g. bio-nlp-benchmark-2025" autocomplete="off" />
+              <span class="field-hint">Unique identifier for this research dataset evaluation.</span>
             </div>
-            <button class="button button-primary" type="submit">Register case</button>
+            <div class="field-group">
+              <label for="reg-landing-url">Landing page URL</label>
+              <input id="reg-landing-url" name="landing_url" required type="url" placeholder="https://datasets.org/bio-nlp" autocomplete="off" />
+              <span class="field-hint">Public dataset landing page presenting version metadata.</span>
+            </div>
+            <div class="field-group">
+              <label for="reg-repo-url">Canonical repository URL</label>
+              <input id="reg-repo-url" name="repository_url" required type="url" placeholder="https://github.com/institution/bio-nlp" autocomplete="off" />
+              <span class="field-hint">Authoritative code/data repository containing tags and license.</span>
+            </div>
+            <div class="two-up">
+              <div class="field-group">
+                <label for="reg-version">Expected version</label>
+                <input id="reg-version" name="expected_version" required maxlength="256" placeholder="v2.1.0" autocomplete="off" />
+              </div>
+              <div class="field-group">
+                <label for="reg-license">Expected license</label>
+                <input id="reg-license" name="expected_license" required maxlength="256" placeholder="MIT" autocomplete="off" />
+              </div>
+            </div>
+            <button class="button button-primary" type="submit">
+              <span>Register case</span>
+            </button>
           </form>
         </section>
 
-        <section class="panel">
-          <p class="eyebrow">02 / RUN THE CHECK</p>
-          <h2>Freeze, assess, view details</h2>
-          <p class="muted">Assessment is permissionless. A failed source fetch stays unresolved and can be retried deliberately.</p>
+        <!-- Section 2: Case Lifecycle & Execution -->
+        <section class="panel panel-inspection" aria-labelledby="inspection-title">
+          <div class="panel-header">
+            <span class="step-badge">Phase 02</span>
+            <h2 id="inspection-title">Execute &amp; verify check</h2>
+            <p class="panel-desc">Lock the revision, trigger decentralized validation, or retry unresolved sources. Authoritative readback verifies the saved case state.</p>
+          </div>
           <form id="caseForm" class="form-stack compact-form">
-            <label>Dataset ID<input id="caseId" name="dataset_id" required maxlength="256" placeholder="dataset-name" /></label>
-            <div class="action-row">
-              <button id="freezeButton" class="button button-secondary" type="button">Freeze</button>
-              <button id="assessButton" class="button button-primary" type="button">Assess</button>
-              <button id="retryButton" class="button button-secondary" type="button">Retry unresolved</button>
+            <div class="field-group">
+              <label for="caseId">Dataset ID to inspect</label>
+              <input id="caseId" name="dataset_id" required maxlength="256" placeholder="e.g. bio-nlp-benchmark-2025" autocomplete="off" />
+              <span class="field-hint">Target dataset ID for lifecycle transitions and readback queries.</span>
             </div>
-          <button id="lookupButton" class="button button-quiet" type="submit">View saved case details</button>
+            <div class="action-row">
+              <button id="freezeButton" class="button button-secondary" type="button" title="Lock the case references to prevent further changes">Freeze</button>
+              <button id="assessButton" class="button button-primary" type="button" title="Trigger independent validator consensus on both sources">Assess</button>
+              <button id="retryButton" class="button button-secondary" type="button" title="Retry unresolved source fetches deliberately">Retry unresolved</button>
+            </div>
+            <button id="lookupButton" class="button button-quiet" type="submit">View saved case details</button>
           </form>
+
+          <!-- Transaction Status Box -->
           <div id="transactionStatus" class="transaction-status" aria-live="polite"></div>
-          <div id="caseReadback" class="readback" aria-live="polite">
-            <p class="muted">No case loaded yet.</p>
+
+          <!-- Authoritative Readback Card -->
+          <div class="readback-container">
+            <div class="readback-title-bar">
+              <h3 class="readback-heading">Authoritative Case State</h3>
+              <span class="readback-badge">Verified case state</span>
+            </div>
+            <div id="caseReadback" class="readback" aria-live="polite">
+              <div class="empty-state">
+                <p class="muted">No case loaded yet. Enter a Dataset ID above and select <strong>View saved case details</strong> or choose an action.</p>
+              </div>
+            </div>
           </div>
         </section>
       </main>
 
-      <section id="how-it-works" class="guide panel">
-        <p class="eyebrow">HOW IT WORKS</p>
-        <h2>Make a dataset revision easy to inspect</h2>
+      <!-- How it Works Guide -->
+      <section id="how-it-works" class="guide-panel" aria-labelledby="guide-title">
+        <div class="guide-header">
+          <span class="step-badge">Workflow</span>
+          <h2 id="guide-title">How decentralized revision verification works</h2>
+          <p class="muted">A four-stage consensus lifecycle for reviewing dataset provenance without relying on a single source.</p>
+        </div>
+
         <div class="guide-grid">
-          <div>
-            <h3>1. Gather the references</h3>
-            <p class="muted">You need a public dataset landing page and its canonical repository, plus the version and license you expect to see.</p>
+          <div class="guide-step">
+            <div class="step-number">01</div>
+            <h3>Gather references</h3>
+            <p class="muted">Identify the public dataset landing page, the authoritative repository, and the expected semantic version and license identifier.</p>
           </div>
-          <div>
-            <h3>2. Register and freeze</h3>
-            <p class="muted">Choose <strong>Connect wallet</strong>, select a wallet in the picker, complete the connection, then register the bounded references. Choose <strong>Freeze</strong> when the case is ready for review.</p>
+          <div class="guide-step">
+            <div class="step-number">02</div>
+            <h3>Register &amp; freeze</h3>
+            <p class="muted">Connect your wallet, submit the bounded case parameters, and freeze the case to seal references against retroactive modification.</p>
           </div>
-          <div>
-            <h3>3. Assess the case</h3>
-            <p class="muted">Choose <strong>Assess</strong> to let the contract compare the two required sources. A source that cannot be reached remains unresolved and can be retried with <strong>Retry unresolved</strong>.</p>
+          <div class="guide-step">
+            <div class="step-number">03</div>
+            <h3>Consensus assessment</h3>
+            <p class="muted">Trigger validators to read both remote sources. If an endpoint is temporarily unavailable, it remains unresolved for an explicit retry.</p>
           </div>
-          <div>
-            <h3>4. Verify the result</h3>
-            <p class="muted">Wait for the confirmation message, then read the saved case details. Completion is shown only after the transaction and the saved details agree. A transaction link is provided for independent verification.</p>
+          <div class="guide-step">
+            <div class="step-number">04</div>
+            <h3>Cryptographic readback</h3>
+            <p class="muted">Verify the SHA-256 evidence digests and final assessment outcome. Terminal states are confirmed before reporting success.</p>
           </div>
         </div>
-        <p class="muted guide-note">The contract stores bounded references and normalized evidence digests, not the source bodies. If a wallet request is cancelled or a network check is interrupted, the page explains the next safe action and never submits the same request automatically.</p>
+        <p class="guide-safety-note">The contract stores bounded references and normalized evidence digests, not the source bodies. If a wallet request is cancelled or a network check is interrupted, the page explains the next safe action and never submits the same request automatically.</p>
       </section>
 
-      <section class="proof-strip">
-        <div><span class="proof-number">2</span><span>mandatory sources</span></div>
-        <div><span class="proof-number">5</span><span>explicit outcomes</span></div>
-        <div><span class="proof-number">0</span><span>raw bodies persisted</span></div>
-        <div><span class="proof-number">SHA-256</span><span>canonical evidence digest</span></div>
+      <!-- Protocol Proof Strip -->
+      <section class="proof-strip" aria-label="Verification metrics">
+        <div class="proof-item">
+          <span class="proof-number">2</span>
+          <span class="proof-label">Mandatory independent sources</span>
+        </div>
+        <div class="proof-item">
+          <span class="proof-number">5</span>
+          <span class="proof-label">Explicit consensus outcomes</span>
+        </div>
+        <div class="proof-item">
+          <span class="proof-number">0</span>
+          <span class="proof-label">Raw bodies persisted on-chain</span>
+        </div>
+        <div class="proof-item">
+          <span class="proof-number">SHA-256</span>
+          <span class="proof-label">Canonical evidence digest</span>
+        </div>
       </section>
+
+      <footer class="app-footer">
+        <p>Research Dataset Revision Checker &bull; Powered by GenLayer Intelligent Contracts</p>
+      </footer>
     </div>
 
+    <!-- Wallet Selector Modal -->
     <dialog id="walletDialog" aria-modal="true" aria-labelledby="walletDialogTitle">
       <div class="dialog-card">
-        <div class="dialog-heading"><div><p class="eyebrow">WALLET SELECTOR</p><h2 id="walletDialogTitle">Choose a wallet</h2></div><button id="closeDialog" class="icon-button" type="button" aria-label="Close wallet selector">×</button></div>
-        <p class="muted">Choose a wallet to continue.</p>
+        <div class="dialog-header">
+          <div class="dialog-title-group">
+            <h2 id="walletDialogTitle">Connect a Wallet</h2>
+            <p class="dialog-subtitle">Select an installed wallet to connect</p>
+          </div>
+          <button id="closeDialog" class="icon-button" type="button" aria-label="Close wallet selector">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
+
         <div id="providerOptions" class="provider-list"></div>
+
         <p id="walletError" class="inline-error" role="alert"></p>
-        <button id="cancelDialog" class="cancel-link" type="button">Cancel</button>
+
+        <div class="dialog-footer">
+          <button id="cancelDialog" class="cancel-link" type="button">Cancel</button>
+        </div>
       </div>
     </dialog>
 

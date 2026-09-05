@@ -44,7 +44,7 @@ Expected release result: every required case is PASS only after the final UI res
 
 ## Local verification
 
-- npm test -- --run: 30 tests passed.
+- npm test -- --run: 32 tests passed.
 - npm run build: Vite production build passed.
 - genvm-lint check contracts/revision_checker.py: passed in the exact-source package.
 - genvm-lint schema contracts/revision_checker.py --json: passed.

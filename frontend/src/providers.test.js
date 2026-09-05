@@ -107,6 +107,26 @@ describe("EIP-6963 provider discovery", () => {
     ]);
   });
 
+  it("does not invent MetaMask from an OKX compatibility facade", () => {
+    const compatibility = Object.assign(provider(), { isMetaMask: true });
+    const okx = Object.assign(provider(), { isOkxWallet: true });
+    const root = rootWith(compatibility, { okxwallet: okx });
+    const discovery = createProviderDiscovery(root);
+    discovery.request();
+    expect(discovery.getOptions()).toEqual([
+      expect.objectContaining({ label: "OKX Wallet", provider: okx, legacy: true }),
+    ]);
+  });
+
+  it("keeps a lone legacy MetaMask fallback", () => {
+    const metamask = Object.assign(provider(), { isMetaMask: true });
+    const discovery = createProviderDiscovery(rootWith(metamask));
+    discovery.request();
+    expect(discovery.getOptions()).toEqual([
+      expect.objectContaining({ label: "MetaMask", provider: metamask, legacy: true }),
+    ]);
+  });
+
   it("lets a late announcement replace only its matching legacy wallet", () => {
     const okxLegacy = Object.assign(provider(), { isOkxWallet: true });
     const rabbyLegacy = Object.assign(provider(), { isRabby: true });
