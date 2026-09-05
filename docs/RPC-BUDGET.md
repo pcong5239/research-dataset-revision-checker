@@ -48,7 +48,7 @@ This matrix is implementation-complete for the first public push. Exact final-re
 
 | Screen/workflow | Request source/method | Actual requests | Cache hit/miss | In-flight dedupe | Poll attempts | Retry/delay | Invalidations | Readback calls | Actual transactions | Variance/result |
 |---|---|---:|---|---|---:|---|---:|---:|---:|---|
-| Local functional regression | Vitest provider/progress fixtures | measured test calls only | n/a | covered | n/a | rejection and reconciliation covered | covered by source assertions | covered by postcondition tests | 0 | PASS; exact release browser measurement pending |
+| Local functional regression | Vitest provider/progress/recovery fixtures | measured test calls only | n/a | covered | n/a | rejection and reconciliation covered | covered by source assertions | covered by postcondition tests | 0 | PASS; exact release browser measurement pending |
 
 ## Closure
 

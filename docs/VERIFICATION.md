@@ -1,9 +1,10 @@
 # Verification
 
-This is the consolidated reviewer-facing verification record for the exact deployed package.
+This is the consolidated reviewer-facing verification record for the deployed contract and current frontend release candidate.
 
 ## Revision and deployment
 
+- Current package HEAD: aeec7f7
 - Evidence baseline package: 9c10927e1760aa84195cbafa5b87198eed3bcc11
 - Contract source commit: 08d759023c807e783d2bbb42059e1cb20a3a025f
 - Contract source SHA-256: ECE513F2132168517E178F737EEEFC951BE370B415508D2604A7C62585E7C7C7
@@ -43,7 +44,7 @@ Expected release result: every required case is PASS only after the final UI res
 
 ## Local verification
 
-- npm test -- --run: 18 tests passed.
+- npm test -- --run: 30 tests passed.
 - npm run build: Vite production build passed.
 - genvm-lint check contracts/revision_checker.py: passed in the exact-source package.
 - genvm-lint schema contracts/revision_checker.py --json: passed.
