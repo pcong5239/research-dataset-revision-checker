@@ -1,6 +1,7 @@
 # Research Dataset Revision Checker
 
 Verified Studionet contract: https://explorer-studio.genlayer.com/address/0x3d5Ff07e8492d8a9eE8E333bdBCFb0B447447ea1
+Verified live app: https://research-dataset-revision-checker.vercel.app/
 
 A GenLayer PROJECT that makes dataset provenance review independently inspectable. A maintainer freezes a dataset ID, landing page, canonical repository, expected version, and expected license. Validators fetch only bounded metadata from the two mandatory public references and reach consensus on normalized, outcome-authorizing fields.
 
