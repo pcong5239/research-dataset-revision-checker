@@ -7,7 +7,7 @@ const CHAIN = {
   name: "GenLayer Studio Network",
   nativeCurrency: { name: "GEN Token", symbol: "GEN", decimals: 18 },
   rpcUrls: ["https://studio.genlayer.com/api"],
-  blockExplorerUrls: ["https://genlayer-explorer.vercel.app"],
+  blockExplorerUrls: ["https://explorer-studio.genlayer.com"],
 };
 
 function rootWith(ethereum, extras = {}) {
@@ -65,6 +65,19 @@ describe("EIP-6963 provider discovery", () => {
     ]);
   });
 
+  it.each([
+    [["OKX Wallet", "okx", "com.okex.wallet"], ["MetaMask", "metamask", "io.metamask"]],
+    [["OKX Wallet", "okx", "com.okex.wallet"], ["Rabby", "rabby", "io.rabby"]],
+    [["MetaMask", "metamask", "io.metamask"], ["Rabby", "rabby", "io.rabby"]],
+  ])("keeps each detected two-wallet combination exact", (first, second) => {
+    const root = rootWith();
+    const discovery = createProviderDiscovery(root);
+    for (const [label, key, rdns] of [first, second]) announce(root, { uuid: key, name: label, rdns }, provider());
+    expect(discovery.getOptions().map((item) => item.label)).toEqual(
+      ["OKX Wallet", "MetaMask", "Rabby"].filter((label) => [first[0], second[0]].includes(label)),
+    );
+  });
+
   it("deduplicates a canonical wallet across different UUIDs", () => {
     const root = rootWith();
     const discovery = createProviderDiscovery(root);
@@ -97,7 +110,7 @@ describe("EIP-6963 provider discovery", () => {
     const metamask = Object.assign(provider(), { isMetaMask: true });
     const okx = Object.assign(provider(), { isOKExWallet: true });
     const rabby = Object.assign(provider(), { isRabby: true });
-    const root = rootWith({ providers: [metamask] }, { okxwallet: okx, rabby });
+    const root = rootWith({ providers: [metamask] }, { metamask, okxwallet: okx, rabby });
     const discovery = createProviderDiscovery(root);
     discovery.request();
     expect(discovery.getOptions()).toEqual([
@@ -111,6 +124,17 @@ describe("EIP-6963 provider discovery", () => {
     const compatibility = Object.assign(provider(), { isMetaMask: true });
     const okx = Object.assign(provider(), { isOkxWallet: true });
     const root = rootWith(compatibility, { okxwallet: okx });
+    const discovery = createProviderDiscovery(root);
+    discovery.request();
+    expect(discovery.getOptions()).toEqual([
+      expect.objectContaining({ label: "OKX Wallet", provider: okx, legacy: true }),
+    ]);
+  });
+
+  it("suppresses a MetaMask-compatible provider-collection facade when named OKX is present", () => {
+    const compatibility = Object.assign(provider(), { isMetaMask: true });
+    const okx = Object.assign(provider(), { isOkxWallet: true });
+    const root = rootWith({ providers: [compatibility] }, { okxwallet: okx });
     const discovery = createProviderDiscovery(root);
     discovery.request();
     expect(discovery.getOptions()).toEqual([

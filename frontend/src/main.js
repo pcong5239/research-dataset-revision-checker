@@ -1,5 +1,8 @@
 import "./style.css";
 import { connectSelectedProvider, createProviderDiscovery, switchToChain } from "./providers.js";
+import { transactionExplorerUrl, STUDIONET_EXPLORER_URL } from "./explorer.js";
+import { handleWalletDialogKeydown, restoreDialogFocus } from "./walletDialog.js";
+import { createWalletSessionStore, WALLET_PHASES, walletView } from "./walletSession.js";
 import {
   assertExpectedReadback,
   classifyWriteError,
@@ -25,16 +28,11 @@ let studionet;
 let ExecutionResult;
 let TransactionStatus;
 let readClient;
-let selected = null;
-let account = "";
-let writeClient = null;
-let sessionCleanup = () => {};
 let initiatingControl = null;
 let lastTxHash = "";
 let lastOperation = "";
 let lastDatasetId = "";
 let reconciling = false;
-let connecting = false;
 let writeInFlight = false;
 let pendingPersistenceDegraded = false;
 
@@ -63,6 +61,16 @@ const READBACK_LABELS = {
 const $ = (selector) => document.querySelector(selector);
 const dialog = $("#walletDialog");
 const providerOptions = $("#providerOptions");
+let lastWalletStatus = "";
+const walletStore = createWalletSessionStore({
+  connectProvider: async (option) => {
+    await loadSdk();
+    return connectSelectedProvider(option, chainConfig());
+  },
+  createWriteClient: (provider, activeAccount) => createClient({ chain: studionet, account: activeAccount, provider }),
+  targetChainId: () => `0x${studionet.id.toString(16)}`,
+  formatError: connectionErrorMessage,
+});
 
 async function loadSdk() {
   if (!sdkPromise) {
@@ -137,12 +145,22 @@ function invalidateCase(datasetId) {
   for (const key of cache.keys()) if (key.endsWith(`get_case:${JSON.stringify([datasetId])}`)) cache.delete(key);
 }
 
-function setWalletState(label, connected = false) {
+function renderWalletState(snapshot) {
+  const view = walletView(snapshot);
   const state = $("#walletState");
   const action = $("#connectButton");
-  state.textContent = connected ? `${label} · ${account.slice(0, 6)}…${account.slice(-4)}` : label;
-  state.classList.toggle("connected", connected);
-  action.textContent = connected ? "Disconnect" : "Connect wallet";
+  state.textContent = view.badge;
+  state.classList.toggle("connected", view.connected);
+  action.textContent = view.actionLabel;
+  $("#walletError").textContent = snapshot.phase === WALLET_PHASES.ERROR ? snapshot.error : "";
+  if (snapshot.publicStatus && snapshot.publicStatus !== lastWalletStatus) {
+    notice(snapshot.publicStatus, snapshot.phase === WALLET_PHASES.CONNECTED ? "success" : "warning");
+  }
+  lastWalletStatus = snapshot.publicStatus;
+  for (const id of ["registerButton", "freezeButton", "assessButton", "retryButton"]) {
+    const control = $("#" + id);
+    if (control) control.disabled = !view.canWrite || writeInFlight;
+  }
 }
 
 function chainConfig() {
@@ -151,7 +169,7 @@ function chainConfig() {
     name: studionet.name,
     nativeCurrency: studionet.nativeCurrency,
     rpcUrls: studionet.rpcUrls.default.http,
-    blockExplorerUrls: [studionet.blockExplorers.default.url],
+    blockExplorerUrls: [STUDIONET_EXPLORER_URL],
   };
 }
 
@@ -187,14 +205,12 @@ function renderTransaction(hash = "", phase = "IDLE", detail = "") {
       copyButton.textContent = "Copied";
     });
     element.append(hashText, copyButton);
-    if (studionet?.blockExplorers?.default?.url) {
-      const link = document.createElement("a");
-      link.href = `${studionet.blockExplorers.default.url}/tx/${hash}`;
-      link.target = "_blank";
-      link.rel = "noreferrer";
-      link.textContent = "View transaction";
-      element.append(link);
-    }
+    const link = document.createElement("a");
+    link.href = transactionExplorerUrl(hash);
+    link.target = "_blank";
+    link.rel = "noreferrer";
+    link.textContent = "View transaction";
+    element.append(link);
     if (pendingPersistenceDegraded) {
       const warning = document.createElement("p");
       warning.className = "transaction-warning";
@@ -236,7 +252,7 @@ function renderProviders(options) {
     const button = document.createElement("button");
     button.type = "button";
     button.className = "provider-option";
-    button.disabled = connecting;
+    button.disabled = walletStore.getSnapshot().phase === WALLET_PHASES.CONNECTING;
     const icon = document.createElement("img");
     icon.src = option.icon;
     icon.alt = "";
@@ -260,80 +276,39 @@ function renderProviders(options) {
 }
 
 async function connect(option) {
-  if (connecting) return;
-  connecting = true;
+  if (walletStore.getSnapshot().phase === WALLET_PHASES.CONNECTING) return;
   renderProviders(discovery.getOptions());
   $("#walletError").textContent = "";
   providerOptions.setAttribute("aria-busy", "true");
   try {
-    await loadSdk();
-    const session = await connectSelectedProvider(option, chainConfig());
-    sessionCleanup();
-    account = session.account;
-    selected = session.provider;
-    writeClient = createClient({ chain: studionet, account, provider: selected });
-    const onAccountsChanged = (next) => {
-      if (!Array.isArray(next) || !next[0] || !/^0x[0-9a-fA-F]{40}$/.test(String(next[0]))) {
-        clearWalletSession("Wallet disconnected. Choose a wallet to reconnect.");
-        return;
-      }
-      account = String(next[0]).toLowerCase();
-      writeClient = createClient({ chain: studionet, account, provider: selected });
-      setWalletState(option.label, true);
-      notice("Wallet account changed. Review the active account before continuing.", "warning");
-    };
-    const onChainChanged = (chainId) => {
-      if (String(chainId).toLowerCase() === `0x${studionet.id.toString(16)}`) {
-        writeClient = createClient({ chain: studionet, account, provider: selected });
-        notice("Wallet network is ready.", "success");
-        return;
-      }
-      writeClient = null;
-      notice("Wallet network changed. Reconnect on the supported network before writing.", "warning");
-    };
-    const onDisconnect = () => onAccountsChanged([]);
-    selected.on?.("accountsChanged", onAccountsChanged);
-    selected.on?.("chainChanged", onChainChanged);
-    selected.on?.("disconnect", onDisconnect);
-    sessionCleanup = () => {
-      selected.removeListener?.("accountsChanged", onAccountsChanged);
-      selected.removeListener?.("chainChanged", onChainChanged);
-      selected.removeListener?.("disconnect", onDisconnect);
-    };
-    setWalletState(option.label, true);
+    await walletStore.connect(option);
     dialog.close();
-    notice("Wallet connected.", "success");
-  } catch (error) {
-    $("#walletError").textContent = connectionErrorMessage(error);
+  } catch {
+    // The canonical wallet store owns and renders the public error.
   } finally {
-    connecting = false;
     renderProviders(discovery.getOptions());
     providerOptions.removeAttribute("aria-busy");
   }
 }
 
 function clearWalletSession(message) {
-  sessionCleanup();
-  sessionCleanup = () => {};
-  selected = null;
-  writeClient = null;
-  account = "";
-  setWalletState("Disconnected");
-  if (message) notice(message, "warning");
+  walletStore.disconnect(message);
 }
 
 async function ensureWriteReady() {
   await loadSdk();
   requireAddress();
-  if (!selected || !writeClient || !account) throw new Error("Choose a wallet before writing.");
-  const currentChain = await selected.request({ method: "eth_chainId" });
+  let session = walletStore.getSnapshot();
+  if (!session.selected || !session.writeClient || !session.account) throw new Error("Choose a wallet before writing.");
+  const currentChain = await session.selected.provider.request({ method: "eth_chainId" });
   if (String(currentChain).toLowerCase() !== `0x${studionet.id.toString(16)}`) {
-    await switchToChain(selected, chainConfig());
-    const afterSwitch = await selected.request({ method: "eth_chainId" });
+    await switchToChain(session.selected.provider, chainConfig());
+    const afterSwitch = await session.selected.provider.request({ method: "eth_chainId" });
     if (String(afterSwitch).toLowerCase() !== `0x${studionet.id.toString(16)}`) throw new Error("Wallet network is not ready.");
-    writeClient = createClient({ chain: studionet, account, provider: selected });
+    walletStore.applyChain(afterSwitch);
+    session = walletStore.getSnapshot();
   }
-  const balance = await readClient.getBalance({ address: account });
+  const balance = await readClient.getBalance({ address: session.account });
   if (balance === 0n) {
     const error = new Error("This wallet has no GEN for the transaction.");
     error.code = "INSUFFICIENT_FUNDS";
@@ -342,7 +317,8 @@ async function ensureWriteReady() {
 }
 
 function setWriteControlsDisabled(disabled) {
-  for (const id of ["freezeButton", "assessButton", "retryButton"]) $("#" + id).disabled = disabled;
+  writeInFlight = disabled;
+  renderWalletState(walletStore.getSnapshot());
 }
 
 async function write(functionName, args, datasetId) {
@@ -373,7 +349,7 @@ async function write(functionName, args, datasetId) {
     notice(`Confirm ${action.toLowerCase()} in your wallet.`);
     let candidate;
     try {
-      candidate = await writeClient.writeContract({ address: requireAddress(), functionName, args, value: 0n });
+      candidate = await walletStore.getSnapshot().writeClient.writeContract({ address: requireAddress(), functionName, args, value: 0n });
     } catch (error) {
       if (Number(error?.code) === 4001 || error?.code) throw error;
       const ambiguous = new Error(error?.message || "The transaction submission result is uncertain.");
@@ -391,7 +367,7 @@ async function write(functionName, args, datasetId) {
       hash: txHash,
       operation: functionName,
       datasetId,
-      account,
+      account: walletStore.getSnapshot().account,
       contract: requireAddress(),
     });
     setTransactionPhase("SUBMITTED", "Your wallet accepted the request.", txHash);
@@ -497,7 +473,7 @@ async function loadCase(datasetId) {
   });
   if (lastTxHash) {
     const link = document.createElement("a");
-    link.href = `${studionet.blockExplorers.default.url}/tx/${lastTxHash}`;
+    link.href = transactionExplorerUrl(lastTxHash);
     link.target = "_blank";
     link.rel = "noreferrer";
     link.className = "readback-tx-link";
@@ -527,20 +503,24 @@ function restorePendingWrite() {
 }
 
 $("#connectButton").addEventListener("click", () => {
-  if (selected) {
+  if (walletStore.getSnapshot().selected) {
     clearWalletSession("Wallet disconnected.");
     return;
   }
   initiatingControl = $("#connectButton");
   $("#walletError").textContent = "";
   discovery.request();
-  renderProviders(discovery.getOptions());
+  walletStore.openChooser(discovery.getOptions());
+  renderProviders(walletStore.getSnapshot().providers);
   dialog.showModal();
   setTimeout(() => (providerOptions.querySelector("button") || $("#cancelDialog")).focus(), 0);
 });
 $("#closeDialog").addEventListener("click", () => dialog.close());
 $("#cancelDialog").addEventListener("click", () => dialog.close());
-dialog.addEventListener("close", () => initiatingControl?.focus());
+dialog.addEventListener("close", () => {
+  walletStore.closeChooser();
+  restoreDialogFocus(initiatingControl);
+});
 dialog.addEventListener("cancel", (event) => {
   event.preventDefault();
   dialog.close();
@@ -548,22 +528,9 @@ dialog.addEventListener("cancel", (event) => {
 dialog.addEventListener("click", (event) => {
   if (event.target === dialog) dialog.close();
 });
-dialog.addEventListener("keydown", (event) => {
-  if (event.key !== "Tab") return;
-  const controls = [...dialog.querySelectorAll("button:not([disabled]), [href], input, select, textarea")]
-    .filter((control) => !control.hasAttribute("hidden") && control.getAttribute("aria-hidden") !== "true");
-  if (!controls.length) return;
-  const first = controls[0];
-  const last = controls[controls.length - 1];
-  if (event.shiftKey && document.activeElement === first) {
-    event.preventDefault();
-    last.focus();
-  } else if (!event.shiftKey && document.activeElement === last) {
-    event.preventDefault();
-    first.focus();
-  }
-});
-discovery.subscribe(renderProviders);
+dialog.addEventListener("keydown", (event) => handleWalletDialogKeydown(event, dialog));
+discovery.subscribe((options) => walletStore.setProviders(options));
+walletStore.subscribe(renderWalletState);
 
 $("#registerForm").addEventListener("submit", async (event) => {
   event.preventDefault();
@@ -594,6 +561,5 @@ for (const [id, method] of [["freezeButton", "freeze_case"], ["assessButton", "a
   });
 }
 
-setWalletState("Disconnected");
 setTransactionPhase(INITIAL_WRITE_PROGRESS.phase);
 restorePendingWrite();

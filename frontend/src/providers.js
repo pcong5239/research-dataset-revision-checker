@@ -127,8 +127,9 @@ export function createProviderDiscovery(root = window) {
     const injected = root.ethereum;
     const collected = Array.isArray(injected?.providers) ? injected.providers : [];
     const named = [root.metamask, root.okxwallet, root.rabby].filter(isProvider);
+    const boundedCollection = named.length ? collected.filter((provider) => named.includes(provider)) : collected;
     const candidates = [
-      ...collected,
+      ...boundedCollection,
       ...named,
       ...(collected.length === 0 && named.length === 0 ? [injected] : []),
     ].filter(isProvider);
