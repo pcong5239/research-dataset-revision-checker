@@ -45,7 +45,7 @@ GenLayer is essential because the contract needs validators to fetch and compare
 
 ## How it works
 
-1. A maintainer connects a supported wallet, enters a dataset ID, landing page URL, canonical repository URL, expected version and expected license, then chooses Register case.
+1. A maintainer connects a supported wallet. For a fresh public run, create a public GitHub repository, make an initial commit, then add landing and repository JSON files in a later commit. Use a fresh dataset_id in both files, matching version, license_id, release_ref and the initial commit_id; the landing file includes the exact repository_url, and the repository file includes its matching repository_owner and repository_name. Copy each file's Raw HTTPS URL into the form with the expected version and license, then choose Register case.
 2. The maintainer chooses Freeze to lock the references and expectations.
 3. Anyone can enter the dataset ID and choose Assess. The contract fetches both required sources inside the validator rule and records a conclusive outcome or UNRESOLVED when transport evidence is insufficient.
 4. An unresolved case can be retried up to three times with Retry unresolved. View saved case details reads the authoritative contract state. The page reports completion only after finality, execution success and readback agree.

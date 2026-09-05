@@ -8,8 +8,8 @@
 
 ## PUBLIC-JOURNEY EVIDENCE (internal; không copy vào form)
 - Normal starting state: a fresh load starts disconnected; write controls remain unavailable until the user explicitly selects an available wallet.
-- Cách người dùng mới tự tạo hoặc nhận từng dynamic value: the user enters a new dataset ID and two public HTTPS JSON URLs, then receives the case lifecycle and transaction links from the live page.
-- Public/reproducible input source: the landing-page and repository-metadata JSON documents are supplied by the user and expose `dataset_id`, `version`, `license_id`, `release_ref`, and `commit_id`; the landing document also names the repository URL and the repository document identifies its owner and name.
+- Cách người dùng mới tự tạo hoặc nhận từng dynamic value: after connecting, the user creates a new public GitHub repository, makes an initial commit, adds two JSON files in a later commit, copies their Raw HTTPS URLs, and enters a fresh dataset ID plus the values in those files; the app then returns the case lifecycle and transaction links.
+- Public/reproducible input source: the user-created landing and repository JSON objects both contain the same fresh `dataset_id`, `version`, `license_id`, `release_ref`, and `commit_id`; the landing object also contains the exact public repository URL, while the repository object contains its matching owner and name.
 - Duplicate/already-used handling: a duplicate dataset ID is rejected without changing the existing case; the public journey uses a new ID created by the user.
 - Interruption/resumption handling: the user can reload the saved case details and retry only when the displayed outcome is `UNRESOLVED`; the retry count is read back from the contract.
 - Evidence rằng không phụ thuộc fixed ID/account/record/seed hoặc đặc quyền của Task: the final Vercel journey used a newly entered case, explicit wallet selection, public inputs, and dynamic transaction results; no fixed test ID, account, transaction hash, or seed appears in the public path.
@@ -64,33 +64,39 @@ Connect wallet
 Select Connect wallet, choose an available wallet, and confirm that the page shows your connected account.
 
 ## How-to Step 2 — Heading
-Register a case
+Create public JSON inputs
 
 ## How-to Step 2 — Instruction
-Enter a new dataset ID, a public HTTPS JSON landing-page URL, a public HTTPS JSON repository-metadata URL, the expected version, and the expected license. The two JSON documents should expose dataset_id, version, license_id, release_ref, and commit_id; the landing document also names the repository URL, while the repository document identifies its owner and name. Select Register case and wait until the page shows REGISTERED.
+In the GitHub web interface, create a new public repository with a name you choose and make one initial commit. In a later commit, add two JSON object files. The landing file must contain dataset_id, version, license_id, release_ref, commit_id, and repository_url. The repository file must contain dataset_id, version, license_id, release_ref, commit_id, repository_owner, and repository_name. Use a fresh dataset_id you choose, use the same version, license_id, release_ref, and initial-commit commit_id in both files, set repository_url to the exact HTTPS URL of this repository, and set repository_owner and repository_name to its matching owner and name. Open each saved file's Raw view and copy the two resulting HTTPS URLs.
 
 ## How-to Step 3 — Heading
-Freeze the case
+Register a case
 
 ## How-to Step 3 — Instruction
-In Dataset ID to inspect, use the ID just registered. Select Freeze and wait until the saved case state reads FROZEN.
+Enter the fresh dataset ID, the landing-file Raw URL, the repository-file Raw URL, the expected version, and the expected license. Select Register case and wait until the page shows REGISTERED.
 
 ## How-to Step 4 — Heading
-Assess the sources
+Freeze the case
 
 ## How-to Step 4 — Instruction
-Select Assess. Keep the page open while the transaction reaches finality and contract readback completes. The page then shows ASSESSED and the validator outcome.
+In Dataset ID to inspect, use the ID just registered. Select Freeze and wait until the saved case state reads FROZEN.
 
 ## How-to Step 5 — Heading
-Review the saved result
+Assess the sources
 
 ## How-to Step 5 — Instruction
-Select View saved case details to reload the authoritative state and inspect the outcome, retry count, evidence digests, and verified transaction link.
+Select Assess. Keep the page open while the transaction reaches finality and contract readback completes. The page then shows ASSESSED and the validator outcome.
 
 ## How-to Step 6 — Heading
-Retry an unresolved assessment
+Review the saved result
 
 ## How-to Step 6 — Instruction
+Select View saved case details to reload the authoritative state and inspect the outcome, retry count, evidence digests, and verified transaction link.
+
+## How-to Step 7 — Heading
+Retry an unresolved assessment
+
+## How-to Step 7 — Instruction
 If the outcome is UNRESOLVED, select Retry unresolved after the public sources are available again. Wait for finality and readback; the retry count increases without an automatic duplicate submission.
 
 ## Expected verification outcome (423 characters / cap 500)
