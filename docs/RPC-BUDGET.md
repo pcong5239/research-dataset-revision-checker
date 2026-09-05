@@ -1,6 +1,6 @@
 # RPC Budget
 
-RPC_BUDGET_REVISION: 9c10927e1760aa84195cbafa5b87198eed3bcc11
+RPC_BUDGET_REVISION: 2a64758912a8bad96361a160acec9105e833592b
 OFFICIAL_DOCS_CHECKED: GenLayerJS package `1.1.8` README and installed types checked 2026-09-05; current GenLayer transaction guidance is recorded in `E:\Genlayer\brain\Engineering and UI Quality Rules.md` and the compatibility form `waitForTransactionReceipt` is used because the installed package exposes that API.
 STUDIO_SCOPE: APPLICABLE
 FRONTEND_SCOPE: APPLICABLE
@@ -53,6 +53,7 @@ This matrix is implementation-complete for the first public push. Exact final-re
 ## Closure
 
 - One shared read client/configuration; write client exists only for the selected wallet session.
+- One canonical wallet-session store atomically owns provider, account, chain validity and write-client eligibility; disconnect or invalid account/network state disables writes without an RPC retry.
 - Cache keys include chain, contract, method and normalized arguments; writes invalidate the affected case.
 - Finality polling is bounded at 3-second intervals and 50 attempts; reconciliation retains one transaction hash and never resubmits automatically.
 - `429`/transport retry remains bounded by the installed SDK wait surface; no custom retry storm is introduced.

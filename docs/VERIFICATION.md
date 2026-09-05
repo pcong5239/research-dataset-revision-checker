@@ -12,8 +12,8 @@ This is the consolidated reviewer-facing verification record for the deployed co
 - Contract: https://explorer-studio.genlayer.com/address/0x3d5Ff07e8492d8a9eE8E333bdBCFb0B447447ea1
 - Deployment transaction: https://explorer-studio.genlayer.com/tx/0x0b5a8f7183dd05b075eba9c7cdb5d0fdb05715a4085b3e5d0cd379f9902a675d
 - Functional frontend baseline: 76ed133425336443af4155dceef87813c521ed6f
-- Integrated frontend release candidate: c5ecd5bd7cd21991064442a10736b7806efb473d
-- Functional frontend correction scope: canonical wallet discovery/options/icons, explicit connect/disconnect controls, duplicate-write prevention, and persisted transaction-hash reconciliation.
+- Integrated frontend release candidate: 2a64758912a8bad96361a160acec9105e833592b
+- Functional frontend correction scope: canonical wallet discovery/options/icons, atomic connect/disconnect/account/network state, canonical Studionet Explorer links, duplicate-write prevention, and persisted transaction-hash reconciliation.
 - Public repository: https://github.com/pcong5239/research-dataset-revision-checker
 - Current public release is a frozen contract; a defect requires replacement deployment and has no public upgrade method.
 
@@ -44,7 +44,7 @@ Expected release result: every required case is PASS only after the final UI res
 
 ## Local verification
 
-- npm test -- --run: 32 tests passed.
+- npm test -- --run: 46 tests passed.
 - npm run build: Vite production build passed.
 - genvm-lint check contracts/revision_checker.py: passed in the exact-source package.
 - genvm-lint schema contracts/revision_checker.py --json: passed.
