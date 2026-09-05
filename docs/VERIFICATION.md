@@ -4,7 +4,7 @@ This is the consolidated reviewer-facing verification record for the exact deplo
 
 ## Revision and deployment
 
-- Package revision: bd27cc0419e122b88882d24e1d899c0e43458045
+- Evidence baseline package: 9c10927e1760aa84195cbafa5b87198eed3bcc11
 - Contract source commit: 08d759023c807e783d2bbb42059e1cb20a3a025f
 - Contract source SHA-256: ECE513F2132168517E178F737EEEFC951BE370B415508D2604A7C62585E7C7C7
 - Network: Studionet, chain ID 61999
