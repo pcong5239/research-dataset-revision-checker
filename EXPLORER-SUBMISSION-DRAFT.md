@@ -9,7 +9,7 @@
 ## PUBLIC-JOURNEY EVIDENCE (internal; không copy vào form)
 - Normal starting state: a fresh load starts disconnected; write controls remain unavailable until the user explicitly selects an available wallet.
 - Cách người dùng mới tự tạo hoặc nhận từng dynamic value: after connecting, the user creates a new public GitHub repository, makes an initial commit, adds two JSON files in a later commit, copies their Raw HTTPS URLs, and enters a fresh dataset ID plus the values in those files; the app then returns the case lifecycle and transaction links.
-- Public/reproducible input source: the user-created landing and repository JSON objects both contain the same fresh `dataset_id`, `version`, `license_id`, `release_ref`, and `commit_id`; the landing object also contains the exact public repository URL, while the repository object contains its matching owner and name.
+- Public/reproducible input source: the user-created landing and repository JSON objects both contain the same fresh `dataset_id`, `version`, `license_id`, `release_ref`, and `commit_id`; the landing object contains the exact Raw HTTPS URL of the repository JSON file, while the repository object contains the owner and name in that Raw URL's path.
 - Duplicate/already-used handling: a duplicate dataset ID is rejected without changing the existing case; the public journey uses a new ID created by the user.
 - Interruption/resumption handling: the user can reload the saved case details and retry only when the displayed outcome is `UNRESOLVED`; the retry count is read back from the contract.
 - Evidence rằng không phụ thuộc fixed ID/account/record/seed hoặc đặc quyền của Task: the final Vercel journey used a newly entered case, explicit wallet selection, public inputs, and dynamic transaction results; no fixed test ID, account, transaction hash, or seed appears in the public path.
@@ -67,13 +67,13 @@ Select Connect wallet, choose an available wallet, and confirm that the page sho
 Create public JSON inputs
 
 ## How-to Step 2 — Instruction
-In the GitHub web interface, create a new public repository with a name you choose and make one initial commit. In a later commit, add two JSON object files. The landing file must contain dataset_id, version, license_id, release_ref, commit_id, and repository_url. The repository file must contain dataset_id, version, license_id, release_ref, commit_id, repository_owner, and repository_name. Use a fresh dataset_id you choose, use the same version, license_id, release_ref, and initial-commit commit_id in both files, set repository_url to the exact HTTPS URL of this repository, and set repository_owner and repository_name to its matching owner and name. Open each saved file's Raw view and copy the two resulting HTTPS URLs.
+In the GitHub web interface, create a new public repository with a name you choose and make one initial commit. Copy that commit's SHA. In a later commit, add repository.json as a JSON object with dataset_id, version, license_id, release_ref, commit_id, repository_owner, and repository_name. Use a fresh dataset_id you choose, set commit_id to the initial commit SHA, set repository_owner and repository_name to the repository path, open repository.json's Raw view, and copy that exact HTTPS URL. In the next commit, add landing.json as a JSON object with dataset_id, version, license_id, release_ref, commit_id, and repository_url. Use the same values in both files and set repository_url to exactly the copied Raw URL for repository.json, not to the normal GitHub repository page URL. Open landing.json's Raw view and copy its exact HTTPS URL.
 
 ## How-to Step 3 — Heading
 Register a case
 
 ## How-to Step 3 — Instruction
-Enter the fresh dataset ID, the landing-file Raw URL, the repository-file Raw URL, the expected version, and the expected license. Select Register case and wait until the page shows REGISTERED.
+Enter the fresh dataset ID, the landing.json Raw URL, the repository.json Raw URL in the field labelled Canonical repository URL, the expected version, and the expected license. Select Register case and wait until the page shows REGISTERED.
 
 ## How-to Step 4 — Heading
 Freeze the case
