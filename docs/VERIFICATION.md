@@ -4,7 +4,7 @@ This is the consolidated reviewer-facing verification record for the deployed co
 
 ## Revision and deployment
 
-- Current package HEAD: aeec7f7
+- Prior POST_DEPLOY_TEST package HEAD: 26eb4450989dd09354717e25be27fdd36df68595
 - Evidence baseline package: 9c10927e1760aa84195cbafa5b87198eed3bcc11
 - Contract source commit: 08d759023c807e783d2bbb42059e1cb20a3a025f
 - Contract source SHA-256: ECE513F2132168517E178F737EEEFC951BE370B415508D2604A7C62585E7C7C7
@@ -12,8 +12,8 @@ This is the consolidated reviewer-facing verification record for the deployed co
 - Contract: https://explorer-studio.genlayer.com/address/0x3d5Ff07e8492d8a9eE8E333bdBCFb0B447447ea1
 - Deployment transaction: https://explorer-studio.genlayer.com/tx/0x0b5a8f7183dd05b075eba9c7cdb5d0fdb05715a4085b3e5d0cd379f9902a675d
 - Functional frontend baseline: 76ed133425336443af4155dceef87813c521ed6f
-- Functional frontend release commit: b26d9dc
-- Functional frontend correction scope: canonical wallet discovery/options/icons, duplicate-write prevention, and persisted transaction-hash reconciliation.
+- Integrated frontend release candidate: c5ecd5bd7cd21991064442a10736b7806efb473d
+- Functional frontend correction scope: canonical wallet discovery/options/icons, explicit connect/disconnect controls, duplicate-write prevention, and persisted transaction-hash reconciliation.
 - Public repository: https://github.com/pcong5239/research-dataset-revision-checker
 - Current public release is a frozen contract; a defect requires replacement deployment and has no public upgrade method.
 
