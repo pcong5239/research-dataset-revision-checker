@@ -1,5 +1,12 @@
 import "./style.css";
 import { connectSelectedProvider, createProviderDiscovery, switchToChain } from "./providers.js";
+import {
+  assertExpectedReadback,
+  classifyWriteError,
+  INITIAL_WRITE_PROGRESS,
+  PENDING_PHASES,
+  TRANSACTION_COPY,
+} from "./transactionProgress.js";
 
 const CONTRACT_ADDRESS = import.meta.env.VITE_CONTRACT_ADDRESS || "";
 const discovery = createProviderDiscovery();
@@ -17,6 +24,9 @@ let writeClient = null;
 let sessionCleanup = () => {};
 let initiatingControl = null;
 let lastTxHash = "";
+let lastOperation = "";
+let lastDatasetId = "";
+let reconciling = false;
 
 const ACTION_LABELS = {
   register_case: "Register case",
@@ -68,7 +78,16 @@ function notice(message, tone = "") {
 }
 
 function errorMessage(error) {
-  return String(error?.shortMessage || error?.message || error || "Unknown error").replace(/0x[a-f-f0-9]{64}/gi, "[transaction hash]");
+  return String(error?.shortMessage || error?.message || error || "The request could not be completed.")
+    .replace(/0x[a-f-f0-9]{64}/gi, "[transaction hash]")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function connectionErrorMessage(error) {
+  if (Number(error?.code) === 4001) return "Wallet connection was cancelled. Choose a wallet to try again.";
+  if (Number(error?.code) === 4902) return "This wallet does not support the selected network.";
+  return "Wallet connection could not be completed. Choose a wallet to try again.";
 }
 
 function requireAddress() {
@@ -116,20 +135,66 @@ function chainConfig() {
   };
 }
 
-function renderTransaction(hash, label) {
+function renderTransaction(hash = "", phase = "IDLE", detail = "") {
   const element = $("#transactionStatus");
+  element.setAttribute("data-transaction-phase", phase);
+  element.setAttribute("role", phase === "REJECTED" || phase === "FAILED" ? "alert" : "status");
+  element.setAttribute("aria-live", phase === "REJECTED" || phase === "FAILED" ? "assertive" : "polite");
+  if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) element.classList.add("reduced-motion");
+  else element.classList.remove("reduced-motion");
   element.replaceChildren();
+  if (PENDING_PHASES.has(phase)) {
+    const spinner = document.createElement("span");
+    spinner.className = "transaction-spinner";
+    spinner.setAttribute("aria-hidden", "true");
+    element.append(spinner);
+  }
+  const copy = TRANSACTION_COPY[phase] || TRANSACTION_COPY.IDLE;
   const text = document.createElement("span");
-  text.textContent = `${label}: ${hash}`;
-  const copy = document.createElement("button");
-  copy.type = "button";
-  copy.className = "button button-quiet copy-button";
-  copy.textContent = "Copy hash";
-  copy.addEventListener("click", async () => {
-    await navigator.clipboard.writeText(hash);
-    copy.textContent = "Copied";
-  });
-  element.append(text, copy);
+  text.className = "transaction-copy";
+  text.textContent = detail || copy.detail;
+  element.append(text);
+  if (hash) {
+    const hashText = document.createElement("code");
+    hashText.className = "transaction-hash";
+    hashText.textContent = hash;
+    const copyButton = document.createElement("button");
+    copyButton.type = "button";
+    copyButton.className = "button button-quiet copy-button";
+    copyButton.textContent = "Copy hash";
+    copyButton.addEventListener("click", async () => {
+      await navigator.clipboard.writeText(hash);
+      copyButton.textContent = "Copied";
+    });
+    element.append(hashText, copyButton);
+    if (studionet?.blockExplorers?.default?.url) {
+      const link = document.createElement("a");
+      link.href = `${studionet.blockExplorers.default.url}/tx/${hash}`;
+      link.target = "_blank";
+      link.rel = "noreferrer";
+      link.textContent = "View transaction";
+      element.append(link);
+    }
+  }
+  if (phase === "RECONCILIATION_REQUIRED") {
+    const reconcile = document.createElement("button");
+    reconcile.type = "button";
+    reconcile.className = "button button-quiet reconcile-button";
+    reconcile.textContent = "Check existing transaction";
+    reconcile.addEventListener("click", reconcileLastTransaction);
+    element.append(reconcile);
+  }
+}
+
+function setTransactionPhase(phase, detail = "", hash = lastTxHash) {
+  renderTransaction(hash, phase, detail);
+}
+
+function showWriteError(error, hash = lastTxHash) {
+  const result = classifyWriteError(error, Boolean(hash));
+  setTransactionPhase(result.phase, result.message, hash);
+  notice(result.message, "error");
+  return result;
 }
 
 function renderProviders(options) {
@@ -154,9 +219,7 @@ function renderProviders(options) {
     copy.className = "provider-copy";
     const name = document.createElement("strong");
     name.textContent = option.label;
-    const detail = document.createElement("small");
-    detail.textContent = "Browser wallet";
-    copy.append(name, detail);
+    copy.append(name);
     const arrow = document.createElement("span");
     arrow.className = "provider-arrow";
     arrow.setAttribute("aria-hidden", "true");
@@ -209,7 +272,7 @@ async function connect(option) {
     dialog.close();
     notice("Wallet connected.", "success");
   } catch (error) {
-    $("#walletError").textContent = errorMessage(error);
+    $("#walletError").textContent = connectionErrorMessage(error);
   } finally {
     providerOptions.removeAttribute("aria-busy");
   }
@@ -241,21 +304,66 @@ async function ensureWriteReady() {
 }
 
 async function write(functionName, args, datasetId) {
-  await ensureWriteReady();
-  const action = ACTION_LABELS[functionName] || "Continue";
-  notice(`Confirm ${action.toLowerCase()} in your wallet.`);
-  const txHash = await writeClient.writeContract({ address: requireAddress(), functionName, args, value: 0n });
-  lastTxHash = txHash;
-  renderTransaction(txHash, "Waiting for confirmation");
-  notice(`${action} submitted.`);
-  const receipt = await readClient.waitForTransactionReceipt({ hash: txHash, status: TransactionStatus.FINALIZED, interval: 3000, retries: 50 });
-  if (receipt.txExecutionResultName !== ExecutionResult.FINISHED_WITH_RETURN) {
-    throw new Error(`Finalized transaction did not succeed: ${receipt.txExecutionResultName || "unknown execution result"}.`);
+  lastTxHash = "";
+  lastOperation = functionName;
+  lastDatasetId = datasetId;
+  setTransactionPhase(INITIAL_WRITE_PROGRESS.phase);
+  let txHash = "";
+  try {
+    await ensureWriteReady();
+    const action = ACTION_LABELS[functionName] || "Continue";
+    setTransactionPhase("WAITING_FOR_WALLET");
+    notice(`Confirm ${action.toLowerCase()} in your wallet.`);
+    const candidate = await writeClient.writeContract({ address: requireAddress(), functionName, args, value: 0n });
+    if (!/^0x[a-fA-F0-9]{64}$/.test(String(candidate))) throw new Error("The wallet did not return a transaction reference.");
+    txHash = String(candidate);
+    lastTxHash = txHash;
+    setTransactionPhase("SUBMITTED", "Your wallet accepted the request.", txHash);
+    notice(`${action} submitted.`);
+    setTransactionPhase("WAITING_FOR_FINALITY", "The network is confirming the transaction.", txHash);
+    const receipt = await readClient.waitForTransactionReceipt({ hash: txHash, status: TransactionStatus.FINALIZED, interval: 3000, retries: 50 });
+    setTransactionPhase("VERIFYING_EXECUTION", "The transaction is finalized; checking that it completed successfully.", txHash);
+    if (receipt.txExecutionResultName !== ExecutionResult.FINISHED_WITH_RETURN) {
+      const error = new Error("The finalized transaction did not complete successfully.");
+      error.code = "EXECUTION_FAILED";
+      throw error;
+    }
+    setTransactionPhase("VERIFYING_READBACK", "Checking the saved case details before reporting completion.", txHash);
+    invalidateCase(datasetId);
+    const readback = await loadCase(datasetId);
+    assertExpectedReadback(functionName, readback);
+    setTransactionPhase("SUCCESS", "The saved case details were verified.", txHash);
+    notice(`${action} confirmed. Case details were refreshed.`, "success");
+  } catch (error) {
+    showWriteError(error, txHash);
+    throw error;
   }
-  invalidateCase(datasetId);
-  await loadCase(datasetId);
-  renderTransaction(txHash, "Confirmed");
-  notice(`${action} confirmed. Case details were refreshed.`, "success");
+}
+
+async function reconcileLastTransaction() {
+  if (reconciling || !lastTxHash || !lastOperation || !lastDatasetId) return;
+  reconciling = true;
+  const hash = lastTxHash;
+  try {
+    setTransactionPhase("WAITING_FOR_FINALITY", "Checking the existing transaction.", hash);
+    const receipt = await readClient.waitForTransactionReceipt({ hash, status: TransactionStatus.FINALIZED, interval: 3000, retries: 50 });
+    setTransactionPhase("VERIFYING_EXECUTION", "The transaction is finalized; checking that it completed successfully.", hash);
+    if (receipt.txExecutionResultName !== ExecutionResult.FINISHED_WITH_RETURN) {
+      const error = new Error("The finalized transaction did not complete successfully.");
+      error.code = "EXECUTION_FAILED";
+      throw error;
+    }
+    setTransactionPhase("VERIFYING_READBACK", "Checking the saved case details before reporting completion.", hash);
+    invalidateCase(lastDatasetId);
+    const readback = await loadCase(lastDatasetId);
+    assertExpectedReadback(lastOperation, readback);
+    setTransactionPhase("SUCCESS", "The saved case details were verified.", hash);
+    notice("The existing transaction was verified successfully.", "success");
+  } catch (error) {
+    showWriteError(error, hash);
+  } finally {
+    reconciling = false;
+  }
 }
 
 async function loadCase(datasetId) {
@@ -277,7 +385,7 @@ async function loadCase(datasetId) {
     link.href = `${studionet.blockExplorers.default.url}/tx/${lastTxHash}`;
     link.target = "_blank";
     link.rel = "noreferrer";
-    link.textContent = `View transaction ${lastTxHash.slice(0, 10)}…`;
+    link.textContent = "View transaction";
     readback.append(link);
   }
   return value;
@@ -316,21 +424,27 @@ $("#registerForm").addEventListener("submit", async (event) => {
     await write("register_case", [...data.values()], String(data.get("dataset_id")).trim());
     $("#caseId").value = String(data.get("dataset_id")).trim();
   } catch (error) {
-    notice(errorMessage(error), "error");
+    showWriteError(error, lastTxHash);
   }
 });
 
 $("#caseForm").addEventListener("submit", async (event) => {
   event.preventDefault();
   try { await loadCase(caseId()); notice("Readback loaded from the configured contract."); }
-  catch (error) { notice(errorMessage(error), "error"); }
+  catch (error) { notice(error?.message?.startsWith("Enter a dataset ID") ? errorMessage(error) : "Case details could not be loaded. Try again.", "error"); }
 });
 
 for (const [id, method] of [["freezeButton", "freeze_case"], ["assessButton", "assess"], ["retryButton", "retry_unresolved"]]) {
   $("#" + id).addEventListener("click", async () => {
-    try { await write(method, [caseId()], caseId()); }
-    catch (error) { notice(lastTxHash ? `${errorMessage(error)} Transaction remains ${lastTxHash}.` : errorMessage(error), "error"); }
+    try {
+      const idValue = caseId();
+      await write(method, [idValue], idValue);
+    } catch (error) {
+      if (error?.message?.startsWith("Enter a dataset ID")) notice(errorMessage(error), "error");
+      else showWriteError(error, lastTxHash);
+    }
   });
 }
 
 setWalletState("Disconnected");
+setTransactionPhase(INITIAL_WRITE_PROGRESS.phase);

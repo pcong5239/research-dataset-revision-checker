@@ -20,6 +20,12 @@
         </div>
       </header>
 
+      <nav class="quick-nav" aria-label="Page sections">
+        <a href="#how-it-works">How it works</a>
+        <a href="#registerForm">Register a case</a>
+        <a href="#caseForm">Check a case</a>
+      </nav>
+
       <div id="globalNotice" class="notice" role="status" aria-live="polite"></div>
 
       <main class="grid">
@@ -58,6 +64,30 @@
           </div>
         </section>
       </main>
+
+      <section id="how-it-works" class="guide panel">
+        <p class="eyebrow">HOW IT WORKS</p>
+        <h2>Make a dataset revision easy to inspect</h2>
+        <div class="guide-grid">
+          <div>
+            <h3>1. Gather the references</h3>
+            <p class="muted">You need a public dataset landing page and its canonical repository, plus the version and license you expect to see.</p>
+          </div>
+          <div>
+            <h3>2. Register and freeze</h3>
+            <p class="muted">Choose <strong>Connect wallet</strong>, select a wallet in the picker, complete the connection, then register the bounded references. Choose <strong>Freeze</strong> when the case is ready for review.</p>
+          </div>
+          <div>
+            <h3>3. Assess the case</h3>
+            <p class="muted">Choose <strong>Assess</strong> to let the contract compare the two required sources. A source that cannot be reached remains unresolved and can be retried with <strong>Retry unresolved</strong>.</p>
+          </div>
+          <div>
+            <h3>4. Verify the result</h3>
+            <p class="muted">Wait for the confirmation message, then read the saved case details. Completion is shown only after the transaction and the saved details agree. A transaction link is provided for independent verification.</p>
+          </div>
+        </div>
+        <p class="muted guide-note">The contract stores bounded references and normalized evidence digests, not the source bodies. If a wallet request is cancelled or a network check is interrupted, the page explains the next safe action and never submits the same request automatically.</p>
+      </section>
 
       <section class="proof-strip">
         <div><span class="proof-number">2</span><span>mandatory sources</span></div>
