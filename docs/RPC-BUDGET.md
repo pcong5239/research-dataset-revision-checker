@@ -1,6 +1,6 @@
 # RPC Budget
 
-RPC_BUDGET_REVISION: `26eb4450989dd09354717e25be27fdd36df68595` plus bounded frontend lifecycle repair before first public push
+RPC_BUDGET_REVISION: bd27cc0419e122b88882d24e1d899c0e43458045
 OFFICIAL_DOCS_CHECKED: GenLayerJS package `1.1.8` README and installed types checked 2026-09-05; current GenLayer transaction guidance is recorded in `E:\Genlayer\brain\Engineering and UI Quality Rules.md` and the compatibility form `waitForTransactionReceipt` is used because the installed package exposes that API.
 STUDIO_SCOPE: APPLICABLE
 FRONTEND_SCOPE: APPLICABLE

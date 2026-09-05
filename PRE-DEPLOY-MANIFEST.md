@@ -12,6 +12,8 @@
 - Constructor arguments: none
 - Studio deployer/E2E account: `0x34b92E6553eaCA11A00A9d86d75d8a7881779D78`
 - Account role: deployer and Studio E2E operator
+- Functional frontend release commit: c5660a43ba602250c6007ff360295053645e5b76
+- Public package commit: bd27cc0419e122b88882d24e1d899c0e43458045
 - Functional frontend commit: `76ed133425336443af4155dceef87813c521ed6f`
 - Linked contracts: none
 - Deployment transaction: `0x0b5a8f7183dd05b075eba9c7cdb5d0fdb05715a4085b3e5d0cd379f9902a675d`
