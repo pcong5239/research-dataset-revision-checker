@@ -32,6 +32,11 @@ describe("transaction progress state model", () => {
     expect("duplicate transaction hash reconciliation").toContain("duplicate");
   });
 
+  it("requires reconciliation after an ambiguous submission without a hash", () => {
+    const result = classifyWriteError({ code: "SUBMISSION_AMBIGUOUS" }, false);
+    expect(result.phase).toBe("RECONCILIATION_REQUIRED");
+  });
+
   it("marks finalized execution/readback failures as failed", () => {
     expect(classifyWriteError({ code: "EXECUTION_FAILED" }, true).phase).toBe("FAILED");
     expect(classifyWriteError({ code: "READBACK_MISMATCH" }, true).phase).toBe("FAILED");

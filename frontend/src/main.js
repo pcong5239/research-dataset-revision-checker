@@ -7,6 +7,13 @@ import {
   PENDING_PHASES,
   TRANSACTION_COPY,
 } from "./transactionProgress.js";
+import {
+  clearPendingWrite,
+  isTransactionHash,
+  preparePendingStorage,
+  readPendingWrite,
+  savePendingWrite,
+} from "./transactionRecovery.js";
 
 const CONTRACT_ADDRESS = import.meta.env.VITE_CONTRACT_ADDRESS || "";
 const discovery = createProviderDiscovery();
@@ -28,6 +35,8 @@ let lastOperation = "";
 let lastDatasetId = "";
 let reconciling = false;
 let connecting = false;
+let writeInFlight = false;
+let pendingPersistenceDegraded = false;
 
 const ACTION_LABELS = {
   register_case: "Register case",
@@ -94,6 +103,14 @@ function connectionErrorMessage(error) {
 function requireAddress() {
   if (!/^0x[a-fA-F0-9]{40}$/.test(CONTRACT_ADDRESS)) throw new Error("Contract address is not configured for this release.");
   return CONTRACT_ADDRESS;
+}
+
+function browserStorage() {
+  try {
+    return window.localStorage;
+  } catch {
+    return null;
+  }
 }
 
 function cacheKey(method, args) {
@@ -175,6 +192,12 @@ function renderTransaction(hash = "", phase = "IDLE", detail = "") {
       link.rel = "noreferrer";
       link.textContent = "View transaction";
       element.append(link);
+    }
+    if (pendingPersistenceDegraded) {
+      const warning = document.createElement("p");
+      warning.className = "transaction-warning";
+      warning.textContent = "Keep this page open until verification finishes. Do not reload or submit again.";
+      element.append(warning);
     }
   }
   if (phase === "RECONCILIATION_REQUIRED") {
@@ -307,26 +330,73 @@ async function ensureWriteReady() {
     writeClient = createClient({ chain: studionet, account, provider: selected });
   }
   const balance = await readClient.getBalance({ address: account });
-  if (balance === 0n) throw new Error("This wallet has no GEN for the transaction.");
+  if (balance === 0n) {
+    const error = new Error("This wallet has no GEN for the transaction.");
+    error.code = "INSUFFICIENT_FUNDS";
+    throw error;
+  }
+}
+
+function setWriteControlsDisabled(disabled) {
+  for (const id of ["freezeButton", "assessButton", "retryButton"]) $("#" + id).disabled = disabled;
 }
 
 async function write(functionName, args, datasetId) {
+  if (writeInFlight) return;
+  const storage = browserStorage();
+  const pending = readPendingWrite(storage, CONTRACT_ADDRESS, Object.keys(ACTION_LABELS));
+  if (pending) {
+    lastTxHash = pending.hash;
+    lastOperation = pending.operation;
+    lastDatasetId = pending.datasetId;
+    setTransactionPhase("RECONCILIATION_REQUIRED", "An existing transaction still needs verification.", pending.hash);
+    notice("An existing transaction needs verification. Do not submit again.", "warning");
+    return;
+  }
+  writeInFlight = true;
+  setWriteControlsDisabled(true);
   lastTxHash = "";
   lastOperation = functionName;
   lastDatasetId = datasetId;
+  pendingPersistenceDegraded = false;
   setTransactionPhase(INITIAL_WRITE_PROGRESS.phase);
   let txHash = "";
   try {
+    preparePendingStorage(storage);
     await ensureWriteReady();
     const action = ACTION_LABELS[functionName] || "Continue";
     setTransactionPhase("WAITING_FOR_WALLET");
     notice(`Confirm ${action.toLowerCase()} in your wallet.`);
-    const candidate = await writeClient.writeContract({ address: requireAddress(), functionName, args, value: 0n });
-    if (!/^0x[a-fA-F0-9]{64}$/.test(String(candidate))) throw new Error("The wallet did not return a transaction reference.");
+    let candidate;
+    try {
+      candidate = await writeClient.writeContract({ address: requireAddress(), functionName, args, value: 0n });
+    } catch (error) {
+      if (Number(error?.code) === 4001 || error?.code) throw error;
+      const ambiguous = new Error(error?.message || "The transaction submission result is uncertain.");
+      ambiguous.code = "SUBMISSION_AMBIGUOUS";
+      throw ambiguous;
+    }
+    if (!isTransactionHash(candidate)) {
+      const error = new Error("The wallet did not return a transaction reference.");
+      error.code = "SUBMISSION_AMBIGUOUS";
+      throw error;
+    }
     txHash = String(candidate);
     lastTxHash = txHash;
+    pendingPersistenceDegraded = !savePendingWrite(storage, {
+      hash: txHash,
+      operation: functionName,
+      datasetId,
+      account,
+      contract: requireAddress(),
+    });
     setTransactionPhase("SUBMITTED", "Your wallet accepted the request.", txHash);
-    notice(`${action} submitted.`);
+    notice(
+      pendingPersistenceDegraded
+        ? "Keep this page open until the transaction is verified."
+        : `${action} submitted.`,
+      pendingPersistenceDegraded ? "warning" : "",
+    );
     setTransactionPhase("WAITING_FOR_FINALITY", "The network is confirming the transaction.", txHash);
     const receipt = await readClient.waitForTransactionReceipt({ hash: txHash, status: TransactionStatus.FINALIZED, interval: 3000, retries: 50 });
     setTransactionPhase("VERIFYING_EXECUTION", "The transaction is finalized; checking that it completed successfully.", txHash);
@@ -339,11 +409,21 @@ async function write(functionName, args, datasetId) {
     invalidateCase(datasetId);
     const readback = await loadCase(datasetId);
     assertExpectedReadback(functionName, readback);
+    if (!clearPendingWrite(storage)) {
+      const error = new Error("Transaction recovery cleanup is unavailable. Do not submit again.");
+      error.code = "CLEANUP_FAILED";
+      throw error;
+    }
+    pendingPersistenceDegraded = false;
     setTransactionPhase("SUCCESS", "The saved case details were verified.", txHash);
     notice(`${action} confirmed. Case details were refreshed.`, "success");
   } catch (error) {
+    if (error?.code === "EXECUTION_FAILED" || error?.code === "READBACK_MISMATCH") clearPendingWrite(storage);
     showWriteError(error, txHash);
     throw error;
+  } finally {
+    writeInFlight = false;
+    setWriteControlsDisabled(false);
   }
 }
 
@@ -351,7 +431,9 @@ async function reconcileLastTransaction() {
   if (reconciling || !lastTxHash || !lastOperation || !lastDatasetId) return;
   reconciling = true;
   const hash = lastTxHash;
+  const storage = browserStorage();
   try {
+    await loadSdk();
     setTransactionPhase("WAITING_FOR_FINALITY", "Checking the existing transaction.", hash);
     const receipt = await readClient.waitForTransactionReceipt({ hash, status: TransactionStatus.FINALIZED, interval: 3000, retries: 50 });
     setTransactionPhase("VERIFYING_EXECUTION", "The transaction is finalized; checking that it completed successfully.", hash);
@@ -364,6 +446,12 @@ async function reconcileLastTransaction() {
     invalidateCase(lastDatasetId);
     const readback = await loadCase(lastDatasetId);
     assertExpectedReadback(lastOperation, readback);
+    if (!clearPendingWrite(storage)) {
+      const error = new Error("Transaction recovery cleanup is unavailable. Do not submit again.");
+      error.code = "CLEANUP_FAILED";
+      throw error;
+    }
+    pendingPersistenceDegraded = false;
     setTransactionPhase("SUCCESS", "The saved case details were verified.", hash);
     notice("The existing transaction was verified successfully.", "success");
   } catch (error) {
@@ -402,6 +490,19 @@ function caseId() {
   const value = $("#caseId").value.trim();
   if (!value) throw new Error("Enter a dataset ID first.");
   return value;
+}
+
+function restorePendingWrite() {
+  const pending = readPendingWrite(browserStorage(), CONTRACT_ADDRESS, Object.keys(ACTION_LABELS));
+  if (!pending) return;
+  lastTxHash = pending.hash;
+  lastOperation = pending.operation;
+  lastDatasetId = pending.datasetId;
+  setTransactionPhase("RECONCILIATION_REQUIRED", "An existing transaction still needs verification.", pending.hash);
+  notice("An existing transaction needs verification. Do not submit again.", "warning");
+  void loadSdk().then(() => {
+    setTransactionPhase("RECONCILIATION_REQUIRED", "An existing transaction still needs verification.", pending.hash);
+  }).catch(() => {});
 }
 
 $("#connectButton").addEventListener("click", () => {
@@ -470,3 +571,4 @@ for (const [id, method] of [["freezeButton", "freeze_case"], ["assessButton", "a
 
 setWalletState("Disconnected");
 setTransactionPhase(INITIAL_WRITE_PROGRESS.phase);
+restorePendingWrite();

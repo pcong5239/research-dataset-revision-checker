@@ -36,8 +36,14 @@ export const TRANSACTION_COPY = Object.freeze({
 
 export function classifyWriteError(error, hasHash) {
   if (Number(error?.code) === 4001) return { phase: "REJECTED", message: TRANSACTION_COPY.REJECTED.detail };
+  if (["STORAGE_UNAVAILABLE", "INSUFFICIENT_FUNDS"].includes(error?.code)) {
+    return { phase: "FAILED", message: error.message || TRANSACTION_COPY.FAILED.detail };
+  }
   if (error?.code === "EXECUTION_FAILED" || error?.code === "READBACK_MISMATCH") {
     return { phase: "FAILED", message: TRANSACTION_COPY.FAILED.detail };
+  }
+  if (error?.code === "SUBMISSION_AMBIGUOUS" || error?.code === "CLEANUP_FAILED") {
+    return { phase: "RECONCILIATION_REQUIRED", message: error.message || TRANSACTION_COPY.RECONCILIATION_REQUIRED.detail };
   }
   if (hasHash) return { phase: "RECONCILIATION_REQUIRED", message: TRANSACTION_COPY.RECONCILIATION_REQUIRED.detail };
   return { phase: "FAILED", message: TRANSACTION_COPY.FAILED.detail };
