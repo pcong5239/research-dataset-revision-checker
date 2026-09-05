@@ -1,29 +1,38 @@
 const SUPPORTED = Object.freeze([
-  { key: "metamask", label: "MetaMask", rdns: "io.metamask", legacyFlag: "isMetaMask" },
-  { key: "okx", label: "OKX Wallet", rdns: "com.okex.wallet", legacyFlag: "isOkxWallet" },
-  { key: "rabby", label: "Rabby", rdns: "io.rabby", legacyFlag: "isRabby" },
+  { key: "okx", label: "OKX Wallet", rdns: ["com.okex.wallet", "com.okx.wallet"], legacyFlags: ["isOkxWallet", "isOKExWallet"], icon: "/wallets/okx.svg" },
+  { key: "metamask", label: "MetaMask", rdns: ["io.metamask"], legacyFlags: ["isMetaMask"], icon: "/wallets/metamask.svg" },
+  { key: "rabby", label: "Rabby", rdns: ["io.rabby"], legacyFlags: ["isRabby"], icon: "/wallets/rabby.svg" },
 ]);
 
-const LEGACY_UUID = "legacy-window-ethereum";
 const EMPTY = Object.freeze([]);
-const FALLBACK_ICON = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Crect width='48' height='48' rx='12' fill='%2318312f'/%3E%3Cpath d='M14 14h20v20H14z' fill='none' stroke='white' stroke-width='3'/%3E%3Ccircle cx='24' cy='24' r='4' fill='%23d78945'/%3E%3C/svg%3E";
 
 function isProvider(value) {
   return Boolean(value && typeof value === "object" && typeof value.request === "function");
 }
 
-function isIcon(value) {
-  return typeof value === "string" && value.startsWith("data:image/");
+function isAnnouncement(value) {
+  if (!value || typeof value !== "object") return false;
+  const detail = value;
+  const info = detail.info;
+  return Boolean(
+    info &&
+      typeof info.uuid === "string" && info.uuid.trim() &&
+      typeof info.name === "string" && info.name.trim() &&
+      typeof info.icon === "string" && info.icon.startsWith("data:image/") &&
+      typeof info.rdns === "string" && info.rdns.trim() &&
+      isProvider(detail.provider),
+  );
 }
 
-function kindFor(info) {
-  const rdns = String(info?.rdns || "").toLowerCase();
-  const name = String(info?.name || "").toLowerCase();
-  return SUPPORTED.find((item) => rdns === item.rdns || name === item.label.toLowerCase()) || null;
+function walletFromAnnouncement(info) {
+  const rdns = String(info.rdns).trim().toLowerCase();
+  const name = String(info.name).trim().toLowerCase();
+  return SUPPORTED.find((wallet) => wallet.rdns.includes(rdns) && wallet.label.toLowerCase() === name) || null;
 }
 
-function legacyKind(provider) {
-  return SUPPORTED.find((item) => provider[item.legacyFlag] === true) || null;
+function walletFromLegacyFlags(provider) {
+  const matches = SUPPORTED.filter((wallet) => wallet.legacyFlags.some((flag) => provider[flag] === true));
+  return matches.length === 1 ? matches[0] : null;
 }
 
 function accountFrom(value) {
@@ -68,75 +77,81 @@ export async function connectSelectedProvider(option, chain) {
 }
 
 export function createProviderDiscovery(root = window) {
-  const byUuid = new Map();
-  const uuidByProvider = new WeakMap();
+  const byWallet = new Map();
+  const providerByUuid = new Map();
+  const walletByProvider = new WeakMap();
   const listeners = new Set();
   let snapshot = EMPTY;
-  let fallbackTimer = null;
 
   const publish = () => {
-    snapshot = Object.freeze([...byUuid.values()].sort((a, b) => a.label.localeCompare(b.label)));
+    snapshot = Object.freeze(SUPPORTED.flatMap((wallet) => {
+      const option = byWallet.get(wallet.key);
+      return option ? [option] : [];
+    }));
     listeners.forEach((listener) => listener(snapshot));
   };
 
-  const removeFallback = () => {
-    if (byUuid.delete(LEGACY_UUID)) publish();
+  const accept = (detail, legacy = false) => {
+    const wallet = legacy ? walletFromLegacyFlags(detail.provider) : walletFromAnnouncement(detail.info);
+    if (!wallet) return;
+
+    const providerObject = detail.provider;
+    const uuid = String(detail.info.uuid).trim();
+    const priorProviderForUuid = providerByUuid.get(uuid);
+    const priorWalletForProvider = walletByProvider.get(providerObject);
+    const current = byWallet.get(wallet.key);
+    if (priorProviderForUuid && priorProviderForUuid !== providerObject) return;
+    if (priorWalletForProvider && priorWalletForProvider !== wallet.key) return;
+    if (current && current.provider !== providerObject && !current.legacy) return;
+
+    if (current?.legacy && current.provider !== providerObject) providerByUuid.delete(current.uuid);
+    providerByUuid.set(uuid, providerObject);
+    walletByProvider.set(providerObject, wallet.key);
+    byWallet.set(wallet.key, {
+      key: wallet.key,
+      label: wallet.label,
+      uuid,
+      icon: wallet.icon,
+      provider: providerObject,
+      legacy,
+    });
+    publish();
   };
 
   const announce = (event) => {
-    const detail = event?.detail || {};
-    const info = detail.info || {};
-    const provider = detail.provider;
-    const match = kindFor(info);
-    const uuid = String(info.uuid || "");
-    if (!match || !uuid || !isProvider(provider) || !isIcon(info.icon)) return;
-
-    const priorUuid = uuidByProvider.get(provider);
-    const priorForUuid = byUuid.get(uuid);
-    if ((priorUuid && priorUuid !== uuid) || (priorForUuid && priorForUuid.provider !== provider)) return;
-
-    removeFallback();
-    uuidByProvider.set(provider, uuid);
-    byUuid.set(uuid, {
-      key: match.key,
-      label: match.label,
-      uuid,
-      icon: info.icon,
-      provider,
-      legacy: false,
-    });
-    publish();
+    const detail = event?.detail;
+    if (isAnnouncement(detail)) accept(detail);
   };
 
-  root.addEventListener("eip6963:announceProvider", announce);
-  root.dispatchEvent(new Event("eip6963:requestProvider"));
-
-  const addLegacyFallbackIfNeeded = () => {
-    fallbackTimer = null;
-    if (byUuid.size || !isProvider(root.ethereum)) return;
-    const match = legacyKind(root.ethereum);
-    if (!match) return;
-    byUuid.set(LEGACY_UUID, {
-      key: match.key,
-      label: match.label,
-      uuid: LEGACY_UUID,
-      icon: FALLBACK_ICON,
-      provider: root.ethereum,
-      legacy: true,
-    });
-    uuidByProvider.set(root.ethereum, LEGACY_UUID);
-    publish();
-  };
-
-  const request = () => {
-    root.dispatchEvent(new Event("eip6963:requestProvider"));
-    if (!fallbackTimer && !byUuid.size && isProvider(root.ethereum)) {
-      fallbackTimer = setTimeout(addLegacyFallbackIfNeeded, 100);
+  const discoverLegacy = () => {
+    const injected = root.ethereum;
+    const candidates = [
+      ...(Array.isArray(injected?.providers) ? injected.providers : []),
+      injected,
+      root.metamask,
+      root.okxwallet,
+      root.rabby,
+    ].filter(isProvider);
+    for (const provider of new Set(candidates)) {
+      const wallet = walletFromLegacyFlags(provider);
+      if (!wallet || byWallet.has(wallet.key)) continue;
+      accept({
+        info: { uuid: `legacy-${wallet.key}`, name: wallet.label, icon: wallet.icon, rdns: wallet.rdns[0] },
+        provider,
+      }, true);
     }
   };
 
+  // EIP-6963 requires this listener to stay active for the page lifetime.
+  root.addEventListener("eip6963:announceProvider", announce);
+  root.dispatchEvent(new Event("eip6963:requestProvider"));
+  queueMicrotask(discoverLegacy);
+
   return {
-    request,
+    request() {
+      root.dispatchEvent(new Event("eip6963:requestProvider"));
+      discoverLegacy();
+    },
     getOptions: () => snapshot.slice(),
     subscribe(listener) {
       listeners.add(listener);

@@ -10,9 +10,10 @@ const CHAIN = {
   blockExplorerUrls: ["https://genlayer-explorer.vercel.app"],
 };
 
-function rootWith(ethereum) {
+function rootWith(ethereum, extras = {}) {
   const root = new EventTarget();
   if (ethereum) root.ethereum = ethereum;
+  Object.assign(root, extras);
   return root;
 }
 
@@ -25,6 +26,24 @@ function announce(root, info, value) {
 }
 
 describe("EIP-6963 provider discovery", () => {
+  it("starts with no options when no supported provider is detected", () => {
+    const discovery = createProviderDiscovery(rootWith());
+    discovery.request();
+    expect(discovery.getOptions()).toEqual([]);
+  });
+
+  it.each([
+    ["OKX Wallet", "okx", "com.okex.wallet"],
+    ["MetaMask", "metamask", "io.metamask"],
+    ["Rabby", "rabby", "io.rabby"],
+  ])("keeps one detected %s provider as one selectable option", (label, key, rdns) => {
+    const root = rootWith();
+    const discovery = createProviderDiscovery(root);
+    const wallet = provider();
+    announce(root, { uuid: key, name: label, rdns }, wallet);
+    expect(discovery.getOptions()).toEqual([expect.objectContaining({ key, label, provider: wallet, icon: `/wallets/${key}.svg` })]);
+  });
+
   it("deduplicates repeated announcements by UUID and provider identity", () => {
     const root = rootWith();
     const discovery = createProviderDiscovery(root);
@@ -40,8 +59,28 @@ describe("EIP-6963 provider discovery", () => {
     announce(root, { uuid: "mm", name: "MetaMask", rdns: "io.metamask" }, provider());
     announce(root, { uuid: "okx", name: "OKX Wallet", rdns: "com.okex.wallet" }, provider());
     announce(root, { uuid: "rb", name: "Rabby", rdns: "io.rabby" }, provider());
-    expect(discovery.getOptions().map((item) => item.label)).toEqual(["MetaMask", "OKX Wallet", "Rabby"]);
-    expect(discovery.getOptions().every((item) => item.icon === ICON)).toBe(true);
+    expect(discovery.getOptions().map((item) => item.label)).toEqual(["OKX Wallet", "MetaMask", "Rabby"]);
+    expect(discovery.getOptions().map((item) => item.icon)).toEqual([
+      "/wallets/okx.svg", "/wallets/metamask.svg", "/wallets/rabby.svg",
+    ]);
+  });
+
+  it("deduplicates a canonical wallet across different UUIDs", () => {
+    const root = rootWith();
+    const discovery = createProviderDiscovery(root);
+    const first = provider();
+    announce(root, { uuid: "mm-one", name: "MetaMask", rdns: "io.metamask" }, first);
+    announce(root, { uuid: "mm-two", name: "MetaMask", rdns: "io.metamask" }, provider());
+    expect(discovery.getOptions()).toEqual([expect.objectContaining({ key: "metamask", provider: first })]);
+  });
+
+  it("hides unsupported and conflicting announced identities", () => {
+    const root = rootWith();
+    const discovery = createProviderDiscovery(root);
+    announce(root, { uuid: "unknown", name: "Unknown Wallet", rdns: "com.example.wallet" }, provider());
+    announce(root, { uuid: "conflict", name: "Rabby", rdns: "io.metamask" }, provider());
+    announce(root, { uuid: "generic", name: "Browser Wallet", rdns: "io.metamask" }, provider());
+    expect(discovery.getOptions()).toEqual([]);
   });
 
   it("rejects a UUID/provider identity collision", () => {
@@ -54,16 +93,40 @@ describe("EIP-6963 provider discovery", () => {
     expect(discovery.getOptions()).toEqual([expect.objectContaining({ label: "MetaMask", provider: first })]);
   });
 
-  it("uses legacy window.ethereum only when no EIP-6963 provider exists", async () => {
-    const wallet = Object.assign(provider(), { isRabby: true });
-    const root = rootWith(wallet);
+  it("discovers identified legacy providers from the provider collection and named injections", () => {
+    const metamask = Object.assign(provider(), { isMetaMask: true });
+    const okx = Object.assign(provider(), { isOKExWallet: true });
+    const rabby = Object.assign(provider(), { isRabby: true });
+    const root = rootWith({ providers: [metamask] }, { okxwallet: okx, rabby });
     const discovery = createProviderDiscovery(root);
     discovery.request();
-    await new Promise((resolve) => setTimeout(resolve, 110));
-    expect(discovery.getOptions()[0]).toEqual(expect.objectContaining({ label: "Rabby", legacy: true }));
-    const announced = provider();
-    announce(root, { uuid: "two", name: "Rabby", rdns: "io.rabby" }, announced);
-    expect(discovery.getOptions()).toEqual([expect.objectContaining({ label: "Rabby", provider: announced })]);
+    expect(discovery.getOptions()).toEqual([
+      expect.objectContaining({ label: "OKX Wallet", provider: okx, legacy: true, icon: "/wallets/okx.svg" }),
+      expect.objectContaining({ label: "MetaMask", provider: metamask, legacy: true, icon: "/wallets/metamask.svg" }),
+      expect.objectContaining({ label: "Rabby", provider: rabby, legacy: true, icon: "/wallets/rabby.svg" }),
+    ]);
+  });
+
+  it("lets a late announcement replace only its matching legacy wallet", () => {
+    const okxLegacy = Object.assign(provider(), { isOkxWallet: true });
+    const rabbyLegacy = Object.assign(provider(), { isRabby: true });
+    const root = rootWith({ providers: [okxLegacy, rabbyLegacy] });
+    const discovery = createProviderDiscovery(root);
+    discovery.request();
+    const okxAnnouncement = provider();
+    announce(root, { uuid: "okx-announced", name: "OKX Wallet", rdns: "com.okx.wallet" }, okxAnnouncement);
+    expect(discovery.getOptions()).toEqual([
+      expect.objectContaining({ label: "OKX Wallet", provider: okxAnnouncement, legacy: false }),
+      expect.objectContaining({ label: "Rabby", provider: rabbyLegacy, legacy: true }),
+    ]);
+  });
+
+  it("hides a legacy provider with conflicting wallet flags", () => {
+    const conflicting = Object.assign(provider(), { isMetaMask: true, isRabby: true });
+    const root = rootWith(conflicting);
+    const discovery = createProviderDiscovery(root);
+    discovery.request();
+    expect(discovery.getOptions()).toEqual([]);
   });
 
   it("does not request accounts during discovery", () => {

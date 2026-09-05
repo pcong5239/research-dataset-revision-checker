@@ -27,6 +27,7 @@ let lastTxHash = "";
 let lastOperation = "";
 let lastDatasetId = "";
 let reconciling = false;
+let connecting = false;
 
 const ACTION_LABELS = {
   register_case: "Register case",
@@ -210,6 +211,7 @@ function renderProviders(options) {
     const button = document.createElement("button");
     button.type = "button";
     button.className = "provider-option";
+    button.disabled = connecting;
     const icon = document.createElement("img");
     icon.src = option.icon;
     icon.alt = "";
@@ -231,6 +233,9 @@ function renderProviders(options) {
 }
 
 async function connect(option) {
+  if (connecting) return;
+  connecting = true;
+  renderProviders(discovery.getOptions());
   $("#walletError").textContent = "";
   providerOptions.setAttribute("aria-busy", "true");
   try {
@@ -274,6 +279,8 @@ async function connect(option) {
   } catch (error) {
     $("#walletError").textContent = connectionErrorMessage(error);
   } finally {
+    connecting = false;
+    renderProviders(discovery.getOptions());
     providerOptions.removeAttribute("aria-busy");
   }
 }
@@ -414,6 +421,21 @@ dialog.addEventListener("cancel", (event) => {
 });
 dialog.addEventListener("click", (event) => {
   if (event.target === dialog) dialog.close();
+});
+dialog.addEventListener("keydown", (event) => {
+  if (event.key !== "Tab") return;
+  const controls = [...dialog.querySelectorAll("button:not([disabled]), [href], input, select, textarea")]
+    .filter((control) => !control.hasAttribute("hidden") && control.getAttribute("aria-hidden") !== "true");
+  if (!controls.length) return;
+  const first = controls[0];
+  const last = controls[controls.length - 1];
+  if (event.shiftKey && document.activeElement === first) {
+    event.preventDefault();
+    last.focus();
+  } else if (!event.shiftKey && document.activeElement === last) {
+    event.preventDefault();
+    first.focus();
+  }
 });
 discovery.subscribe(renderProviders);
 
