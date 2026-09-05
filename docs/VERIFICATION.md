@@ -4,8 +4,8 @@ This is the consolidated reviewer-facing verification record for the exact final
 
 ## Revision and deployment
 
-- Candidate package HEAD: 0bbdbefdd63874ce23fd85ddcf30ef65751c46b1
-- Reviewed package base HEAD before this documentation-only correction: bfa7ef949ebc881b84626c34b31e783f7be6e46e
+- Candidate package HEAD: 1bc1a9eae648f786d8b5094d1af7660c3483d5bb
+- Prior correction base HEAD: 0bbdbefdd63874ce23fd85ddcf30ef65751c46b1
 - Documentation correction scope: `docs/VERIFICATION.md`, `docs/RPC-BUDGET.md` and ignored local governance pointer only; frontend source, contract source, configuration, deployment and Vercel E2E evidence are unchanged.
 - Frontend source commit: 80f80ac5b6a06c2b3c694d8c663b955f5b42e134
 - Contract source commit: 08d759023c807e783d2bbb42059e1cb20a3a025f
@@ -63,8 +63,8 @@ All transaction and contract links use `https://explorer-studio.genlayer.com`. N
 - py -3.13 -m pytest -q -p no:cacheprovider: 13 tests passed.
 - npm audit --omit=dev: 0 vulnerabilities in the reviewed package.
 - Final governance audit: PASS.
-- Post-push GitHub review: PASS for the public repository, default `main`, exact source/deployment links and candidate package HEAD `0bbdbefdd63874ce23fd85ddcf30ef65751c46b1`.
+- Post-push GitHub review: PASS for the public repository, default `main`, exact source/deployment links and candidate package HEAD `1bc1a9eae648f786d8b5094d1af7660c3483d5bb`.
 
 ## Scope and limitations
 
-The live matrix proves the unique registered, frozen, unresolved, bounded retry and duplicate-rejection paths. No live MATCHING_REVISION claim is made. The exact Direct Mode nested sandbox decoder limitation remains documented in PRE-DEPLOY-MANIFEST.md and was not used as Studionet proof. Frontend RPC evidence is complete for the exact configured Vercel release and is measured in docs/RPC-BUDGET.md. The frontend source commit is `80f80ac5b6a06c2b3c694d8c663b955f5b42e134`; this public verification record is bound to candidate package `0bbdbefdd63874ce23fd85ddcf30ef65751c46b1`, with the reviewed base `bfa7ef949ebc881b84626c34b31e783f7be6e46e` documented for provenance.
+The live matrix proves the unique registered, frozen, unresolved, bounded retry and duplicate-rejection paths. No live MATCHING_REVISION claim is made. The exact Direct Mode nested sandbox decoder limitation remains documented in PRE-DEPLOY-MANIFEST.md and was not used as Studionet proof. Frontend RPC evidence is complete for the exact configured Vercel release and is measured in docs/RPC-BUDGET.md. The frontend source commit is `80f80ac5b6a06c2b3c694d8c663b955f5b42e134`; this public verification record is bound to candidate package `1bc1a9eae648f786d8b5094d1af7660c3483d5bb`, with prior correction base `0bbdbefdd63874ce23fd85ddcf30ef65751c46b1` documented for provenance.
