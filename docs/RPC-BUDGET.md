@@ -2,9 +2,9 @@
 
 RPC_BUDGET_REVISION: 80f80ac5b6a06c2b3c694d8c663b955f5b42e134
 RPC_BUDGET_REVISION_ROLE: FRONTEND_SOURCE_COMMIT
-PACKAGE_BASE_HEAD: 0bbdbefdd63874ce23fd85ddcf30ef65751c46b1
-PACKAGE_HEAD: 1bc1a9eae648f786d8b5094d1af7660c3483d5bb
-PACKAGE_HEAD_NOTE: current pushed candidate; source, contract, configuration, deployment and Vercel evidence are unchanged from the package base
+DOCUMENTATION_BASE_HEAD: 1bc1a9eae648f786d8b5094d1af7660c3483d5bb
+PRIOR_CORRECTION_BASE_HEAD: 0bbdbefdd63874ce23fd85ddcf30ef65751c46b1
+PACKAGE_HEAD_NOTE: current package is bound by its immutable GitHub commit and remote main; source, contract, configuration, deployment and Vercel evidence are unchanged from the documentation base
 OFFICIAL_DOCS_CHECKED: GenLayerJS package `1.1.8` README and installed types checked 2026-09-05; current GenLayer transaction guidance is recorded in `E:\Genlayer\brain\Engineering and UI Quality Rules.md` and the compatibility form `waitForTransactionReceipt` is used because the installed package exposes that API.
 STUDIO_SCOPE: APPLICABLE
 FRONTEND_SCOPE: APPLICABLE
