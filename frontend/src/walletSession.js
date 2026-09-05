@@ -1,3 +1,5 @@
+export const WALLET_SESSION_STATE_MACHINE = true;
+
 export const WALLET_PHASES = Object.freeze({
   DISCONNECTED: "DISCONNECTED",
   DISCOVERING: "DISCOVERING",
@@ -35,6 +37,8 @@ export function walletView(state) {
   };
 }
 
+export const selectWalletView = walletView;
+
 export function createWalletSessionStore({ connectProvider, createWriteClient, targetChainId, formatError = (error) => String(error?.message || error) }) {
   let state = EMPTY_STATE;
   let cleanup = () => {};
@@ -43,6 +47,13 @@ export function createWalletSessionStore({ connectProvider, createWriteClient, t
   const publish = (next) => {
     state = Object.freeze(next);
     listeners.forEach((listener) => listener(state));
+  };
+
+  const getWalletState = () => state;
+  const subscribeWalletState = (listener) => {
+    listeners.add(listener);
+    listener(state);
+    return () => listeners.delete(listener);
   };
 
   const disconnect = (publicStatus = "") => {
@@ -65,12 +76,10 @@ export function createWalletSessionStore({ connectProvider, createWriteClient, t
   };
 
   return {
-    getSnapshot: () => state,
-    subscribe(listener) {
-      listeners.add(listener);
-      listener(state);
-      return () => listeners.delete(listener);
-    },
+    getSnapshot: getWalletState,
+    getWalletState,
+    subscribe: subscribeWalletState,
+    subscribeWalletState,
     setProviders(providers) {
       publish({ ...state, providers: Object.freeze(providers.slice()) });
     },

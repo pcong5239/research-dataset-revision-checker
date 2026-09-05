@@ -71,8 +71,9 @@ export async function switchToChain(provider, chain) {
 
 export async function connectSelectedProvider(option, chain) {
   const accounts = await option.provider.request({ method: "eth_requestAccounts" });
-  const account = accountFrom(accounts);
   await switchToChain(option.provider, chain);
+  const activeAccounts = await option.provider.request({ method: "eth_accounts" });
+  const account = accountFrom(Array.isArray(activeAccounts) && activeAccounts.length ? activeAccounts : accounts);
   return { account, provider: option.provider, option };
 }
 

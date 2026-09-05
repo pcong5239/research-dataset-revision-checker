@@ -3,6 +3,7 @@ import { connectSelectedProvider, createProviderDiscovery, switchToChain } from 
 import { transactionExplorerUrl, STUDIONET_EXPLORER_URL } from "./explorer.js";
 import { handleWalletDialogKeydown, restoreDialogFocus } from "./walletDialog.js";
 import { createWalletSessionStore, WALLET_PHASES, walletView } from "./walletSession.js";
+import { isSuccessfulTransaction } from "./transactionOutcome.js";
 import {
   assertExpectedReadback,
   classifyWriteError,
@@ -25,7 +26,6 @@ const inflight = new Map();
 let sdkPromise = null;
 let createClient;
 let studionet;
-let ExecutionResult;
 let TransactionStatus;
 let readClient;
 let initiatingControl = null;
@@ -81,7 +81,6 @@ async function loadSdk() {
     ]).then(([core, chains, types]) => {
       createClient = core.createClient;
       studionet = chains.studionet;
-      ExecutionResult = types.ExecutionResult;
       TransactionStatus = types.TransactionStatus;
       readClient = createClient({ chain: studionet });
     });
@@ -380,7 +379,7 @@ async function write(functionName, args, datasetId) {
     setTransactionPhase("WAITING_FOR_FINALITY", "The network is confirming the transaction.", txHash);
     const receipt = await readClient.waitForTransactionReceipt({ hash: txHash, status: TransactionStatus.FINALIZED, interval: 3000, retries: 50 });
     setTransactionPhase("VERIFYING_EXECUTION", "The transaction is finalized; checking that it completed successfully.", txHash);
-    if (receipt.txExecutionResultName !== ExecutionResult.FINISHED_WITH_RETURN) {
+    if (!isSuccessfulTransaction(receipt)) {
       const error = new Error("The finalized transaction did not complete successfully.");
       error.code = "EXECUTION_FAILED";
       throw error;
@@ -417,7 +416,7 @@ async function reconcileLastTransaction() {
     setTransactionPhase("WAITING_FOR_FINALITY", "Checking the existing transaction.", hash);
     const receipt = await readClient.waitForTransactionReceipt({ hash, status: TransactionStatus.FINALIZED, interval: 3000, retries: 50 });
     setTransactionPhase("VERIFYING_EXECUTION", "The transaction is finalized; checking that it completed successfully.", hash);
-    if (receipt.txExecutionResultName !== ExecutionResult.FINISHED_WITH_RETURN) {
+    if (!isSuccessfulTransaction(receipt)) {
       const error = new Error("The finalized transaction did not complete successfully.");
       error.code = "EXECUTION_FAILED";
       throw error;

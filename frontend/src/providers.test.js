@@ -44,7 +44,7 @@ describe("EIP-6963 provider discovery", () => {
     expect(discovery.getOptions()).toEqual([expect.objectContaining({ key, label, provider: wallet, icon: `/wallets/${key}.svg` })]);
   });
 
-  it("deduplicates repeated announcements by UUID and provider identity", () => {
+  it("keeps a duplicate announcement as one option by UUID and provider identity", () => {
     const root = rootWith();
     const discovery = createProviderDiscovery(root);
     const wallet = provider();
@@ -183,29 +183,29 @@ describe("EIP-6963 provider discovery", () => {
 });
 
 describe("explicit wallet connection", () => {
-  it("requests accounts only from the selected provider and switches after selection", async () => {
+  it("requests accounts only from the selected provider and binds the active account after selection", async () => {
     const calls = [];
     const first = { request: vi.fn(async (args) => { calls.push(["first", args.method]); return []; }) };
     const second = { request: vi.fn(async (args) => {
       calls.push(["second", args.method]);
-      return args.method === "eth_requestAccounts" ? [`0x${"1".repeat(40)}`] : null;
+      return ["eth_requestAccounts", "eth_accounts"].includes(args.method) ? [`0x${"1".repeat(40)}`] : null;
     }) };
     const session = await connectSelectedProvider({ label: "Rabby", provider: second }, CHAIN);
     expect(session.account).toBe(`0x${"1".repeat(40)}`);
     expect(first.request).not.toHaveBeenCalled();
-    expect(calls.map((item) => item[1])).toEqual(["eth_requestAccounts", "wallet_switchEthereumChain"]);
+    expect(calls.map((item) => item[1])).toEqual(["eth_requestAccounts", "wallet_switchEthereumChain", "eth_accounts"]);
   });
 
   it("adds an unknown chain and retries switching once", async () => {
     let switches = 0;
     const provider = { request: vi.fn(async ({ method }) => {
-      if (method === "eth_requestAccounts") return [`0x${"2".repeat(40)}`];
+      if (["eth_requestAccounts", "eth_accounts"].includes(method)) return [`0x${"2".repeat(40)}`];
       if (method === "wallet_switchEthereumChain" && switches++ === 0) throw { code: 4902 };
       return null;
     }) };
     await connectSelectedProvider({ label: "MetaMask", provider }, CHAIN);
     expect(provider.request.mock.calls.map(([args]) => args.method)).toEqual([
-      "eth_requestAccounts", "wallet_switchEthereumChain", "wallet_addEthereumChain", "wallet_switchEthereumChain",
+      "eth_requestAccounts", "wallet_switchEthereumChain", "wallet_addEthereumChain", "wallet_switchEthereumChain", "eth_accounts",
     ]);
   });
 

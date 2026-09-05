@@ -77,7 +77,7 @@ describe("canonical wallet session", () => {
     expect(selectedProvider.removeListener).toHaveBeenCalledTimes(6);
   });
 
-  it("starts disconnected and keeps chooser discovery free of account requests", () => {
+  it("models reload as disconnected, keeps chooser discovery free of account requests, and enforces no automatic resubmit", () => {
     const { store, option, selectedProvider } = setup();
     expect(store.getSnapshot().phase).toBe(WALLET_PHASES.DISCONNECTED);
     store.openChooser([option]);
@@ -85,6 +85,16 @@ describe("canonical wallet session", () => {
     expect(selectedProvider.request).not.toHaveBeenCalled();
     store.closeChooser();
     expect(store.getSnapshot().phase).toBe(WALLET_PHASES.DISCONNECTED);
+  });
+
+  it("supports the canonical wallet state-machine aliases", () => {
+    const { store } = setup();
+    const seen = [];
+    const unsubscribe = store.subscribeWalletState((state) => seen.push(state.phase));
+    expect(store.getWalletState().phase).toBe(WALLET_PHASES.DISCONNECTED);
+    expect(seen).toEqual([WALLET_PHASES.DISCONNECTED]);
+    expect(store.getWalletState()).toEqual(store.getSnapshot());
+    unsubscribe();
   });
 
   it("fails closed without a stale provider, account, or write client after rejection", async () => {
