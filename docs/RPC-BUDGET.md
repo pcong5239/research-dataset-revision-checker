@@ -3,7 +3,8 @@
 RPC_BUDGET_REVISION: 80f80ac5b6a06c2b3c694d8c663b955f5b42e134
 RPC_BUDGET_REVISION_ROLE: FRONTEND_SOURCE_COMMIT
 PACKAGE_BASE_HEAD: bfa7ef949ebc881b84626c34b31e783f7be6e46e
-PACKAGE_HEAD_NOTE: current candidate is a documentation-only descendant; exact candidate HEAD is supplied in the anonymous re-review receipt
+PACKAGE_HEAD: 0bbdbefdd63874ce23fd85ddcf30ef65751c46b1
+PACKAGE_HEAD_NOTE: documentation-only candidate; source, contract, configuration, deployment and Vercel evidence are unchanged from the package base
 OFFICIAL_DOCS_CHECKED: GenLayerJS package `1.1.8` README and installed types checked 2026-09-05; current GenLayer transaction guidance is recorded in `E:\Genlayer\brain\Engineering and UI Quality Rules.md` and the compatibility form `waitForTransactionReceipt` is used because the installed package exposes that API.
 STUDIO_SCOPE: APPLICABLE
 FRONTEND_SCOPE: APPLICABLE
@@ -63,7 +64,7 @@ The exact Studio operations and measured hashes/readbacks are recorded in `PRE-D
 
 STUDIO_EVIDENCE_STATUS: COMPLETE
 
-Studio evidence is complete for the unique deployed paths above: 7 write transactions (including deployment and the expected-error replay), accepted consensus/finality, terminal lifecycle results, and authoritative readbacks are recorded in the manifest. No rate-limit retry or duplicate deployment occurred.
+Studio evidence is complete for the unique deployed paths above: 6 transaction submissions (deployment, four successful state transitions, and the expected-error replay), accepted consensus/finality, terminal lifecycle results, and authoritative readbacks are recorded in the manifest. No rate-limit retry or duplicate deployment occurred.
 
 ## FRONTEND RPC BUDGET MATRIX
 
