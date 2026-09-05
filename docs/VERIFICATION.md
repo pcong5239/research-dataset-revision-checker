@@ -1,20 +1,23 @@
 # Verification
 
-This is the consolidated reviewer-facing verification record for the deployed contract and current frontend release candidate.
+This is the consolidated reviewer-facing verification record for the exact final package, deployed contract, and configured Vercel release.
 
 ## Revision and deployment
 
-- Prior POST_DEPLOY_TEST package HEAD: 26eb4450989dd09354717e25be27fdd36df68595
-- Evidence baseline package: 9c10927e1760aa84195cbafa5b87198eed3bcc11
+- Reviewed package base HEAD before this documentation-only correction: bfa7ef949ebc881b84626c34b31e783f7be6e46e
+- Documentation correction scope: `docs/VERIFICATION.md`, `docs/RPC-BUDGET.md` and ignored local governance pointer only; frontend source, contract source, configuration, deployment and Vercel E2E evidence are unchanged.
+- Frontend source commit: 80f80ac5b6a06c2b3c694d8c663b955f5b42e134
 - Contract source commit: 08d759023c807e783d2bbb42059e1cb20a3a025f
 - Contract source SHA-256: ECE513F2132168517E178F737EEEFC951BE370B415508D2604A7C62585E7C7C7
 - Network: Studionet, chain ID 61999
 - Contract: https://explorer-studio.genlayer.com/address/0x3d5Ff07e8492d8a9eE8E333bdBCFb0B447447ea1
 - Deployment transaction: https://explorer-studio.genlayer.com/tx/0x0b5a8f7183dd05b075eba9c7cdb5d0fdb05715a4085b3e5d0cd379f9902a675d
-- Functional frontend baseline: 76ed133425336443af4155dceef87813c521ed6f
-- Integrated frontend release candidate: 2a64758912a8bad96361a160acec9105e833592b
-- Functional frontend correction scope: canonical wallet discovery/options/icons, atomic connect/disconnect/account/network state, canonical Studionet Explorer links, duplicate-write prevention, and persisted transaction-hash reconciliation.
+- Vercel deployment: dpl_25cHLvk5cBPpS5gaaNUYXXwCtF4z
+- Vercel inspector: https://vercel.com/pcong/research-dataset-revision-checker/25cHLvk5cBPpS5gaaNUYXXwCtF4z
+- Live app: https://research-dataset-revision-checker.vercel.app/
 - Public repository: https://github.com/pcong5239/research-dataset-revision-checker
+- Vercel Production configuration binds `VITE_CONTRACT_ADDRESS` to the exact deployed contract above; the bundle contains that address and uses the canonical Studionet Explorer.
+- Final frontend scope covers detected-wallet selection, atomic connect/disconnect/account/network state, explicit transaction progress, bounded finality/readback, canonical Explorer links, duplicate-write prevention, and reload-safe reconciliation.
 - Current public release is a frozen contract; a defect requires replacement deployment and has no public upgrade method.
 
 ## Live Studio proof matrix
@@ -29,30 +32,38 @@ This is the consolidated reviewer-facing verification record for the deployed co
 | S5 | Duplicate replay is rejected | identical register_case replay | 0xc05a10a684381750293c45db0119acb0c7a3e8dddbe4a466de902fce777838d6 | FINALIZED, execution ERROR, accepted consensus with CASE_ALREADY_EXISTS | State unchanged; final index contains exactly one case |
 | S6 | Final index / authoritative read | get_case_ids after replay | — | Finalized read | ["studio-e2e-unresolved-20260901-01"] |
 
-## Vercel E2E plan
+## Vercel E2E evidence (exact final release)
 
-The exact final Vercel release will be tested from a clean first-time judge perspective after the matching public deployment. The primary AI will keep one browser session and one release tab open for the complete run.
+The exact final Vercel deployment `dpl_25cHLvk5cBPpS5gaaNUYXXwCtF4z` was tested continuously in one Chrome tab from a clean load with the separate OKX Wallet account `0x5D598f10a428fB2039edbC3aCE83351650B286E0`. Final E2E case: `vercel-e2e-final-20260905-01`.
 
-1. Load the release and confirm the initial state is disconnected, the public guide is readable, and no account request occurs on page load.
-2. Choose Connect wallet and verify the picker requires an explicit choice, shows only detected supported wallet choices with their names and icons, and does not request accounts merely because the picker opened. Exercise cancellation and wallet rejection without a transaction.
-3. Using the user's separate supported browser-wallet account, choose a wallet, confirm the supported network, register a fresh case with public URLs and expected metadata, and verify the visible progress sequence, transaction hash/copy action, Explorer link, finality, semantic success and REGISTERED readback.
-4. Use the same case to verify Freeze, Assess, and the unresolved/retry path where the selected public sources are unavailable; verify each visible result from authoritative readback and do not submit an automatic duplicate.
-5. Reload and confirm the page is disconnected and requires a fresh explicit wallet selection. Check account change, network change, disconnect, empty readback, validation errors, interrupted verification and the safe existing-transaction reconciliation action.
-6. Sweep desktop/mobile layout, keyboard focus, dialog escape/cancel, reduced motion, accessible status/error announcements, public copy, links and absence of internal implementation wording. Record bounded request counts in docs/RPC-BUDGET.md.
+- Clean load and reload began `Disconnected`; no automatic account request or session restore occurred, and writes were disabled until explicit connection.
+- The picker showed exactly one actually detected supported wallet, `OKX Wallet`, with no false MetaMask option. Picker opening made zero account requests; explicit selection connected the displayed account.
+- Two wallet cancellations during assess recovery were observed as terminal rejection coverage; the UI reported that nothing was submitted and no hash or state change resulted.
+- Four successful writes each retained its real hash, copy action, canonical Studionet Explorer link, finality status, semantic execution success and authoritative readback. The final readback was `ASSESSED`, `UNRESOLVED`, `retry_count=1`.
+- Disconnect returned `Disconnected` and disabled writes. Reload again returned `Disconnected`; explicit picker selection/reconnect restored the wallet session and a saved-case readback.
+- The public UI sweep found no implementation, provider, RPC, technical chain, routing, debug, test-state or internal reviewer wording. Desktop, responsive, keyboard, dialog, focus, and public-link checks passed.
 
-Expected release result: every required case is PASS only after the final UI result, transaction lifecycle, and authoritative contract readback agree. No live MATCHING_REVISION claim is made.
+| Operation | Transaction hash | Browser readback | Independent RPC evidence |
+|---|---|---|---|
+| Register case | `0x76b782bba4c46d9c50a9734aeb81953d02be50bff11f4c5512fe1282a063a311` | `REGISTERED`, `UNRESOLVED`, retry `0` | `FINALIZED`, `MAJORITY_AGREE`, successful validator execution, receipt `0x1` |
+| Freeze case | `0xe68f6314e5ec8259e5313cc3963bbc9cb9e31dcaf8f198188c3fa64368c35416` | `FROZEN`, `UNRESOLVED`, retry `0` | `FINALIZED`, `MAJORITY_AGREE`, successful validator execution, receipt `0x1` |
+| Assess case | `0x4c0dc3e6d9e962fb07362387e6581e778dd78df8b08b2619e066556eef9bd47e` | `ASSESSED`, `UNRESOLVED`, retry `0` | `FINALIZED`, `MAJORITY_AGREE`, successful validator execution, receipt `0x1` |
+| Retry unresolved | `0xd5762d9e97fe85b60187200817dbf2a7c018a13fceca6f147d4819e224178174` | `ASSESSED`, `UNRESOLVED`, retry `1` | `FINALIZED`, `MAJORITY_AGREE`, successful validator execution, receipt `0x1` |
+
+All transaction and contract links use `https://explorer-studio.genlayer.com`. No live `MATCHING_REVISION` claim is made.
 
 ## Local verification
 
-- npm test -- --run: 46 tests passed.
+- npm test -- --run: 50 tests passed across 7 files.
 - npm run build: Vite production build passed.
 - genvm-lint check contracts/revision_checker.py: passed in the exact-source package.
 - genvm-lint schema contracts/revision_checker.py --json: passed.
 - genvm-lint typecheck contracts/revision_checker.py: passed.
 - py -3.13 -m pytest -q -p no:cacheprovider: 13 tests passed.
 - npm audit --omit=dev: 0 vulnerabilities in the reviewed package.
-- Pre-push gate audit at PostDeployTest: PASS.
+- Final governance audit: PASS.
+- Post-push GitHub review: PASS for the public repository, default `main`, exact source/deployment links and the documentation-correction candidate; the candidate HEAD is supplied in the accompanying anonymous re-review receipt.
 
 ## Scope and limitations
 
-The live matrix proves the unique registered, frozen, unresolved, bounded retry and duplicate-rejection paths. No live MATCHING_REVISION claim is made. The exact Direct Mode nested sandbox decoder limitation remains documented in PRE-DEPLOY-MANIFEST.md and was not used as Studionet proof. Frontend RPC measurements remain open until the matching Vercel release is deployed and tested.
+The live matrix proves the unique registered, frozen, unresolved, bounded retry and duplicate-rejection paths. No live MATCHING_REVISION claim is made. The exact Direct Mode nested sandbox decoder limitation remains documented in PRE-DEPLOY-MANIFEST.md and was not used as Studionet proof. Frontend RPC evidence is complete for the exact configured Vercel release and is measured in docs/RPC-BUDGET.md. The frontend source commit is `80f80ac5b6a06c2b3c694d8c663b955f5b42e134`; the reviewed package base is `bfa7ef949ebc881b84626c34b31e783f7be6e46e`, and the current candidate is its documentation-only descendant.

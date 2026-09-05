@@ -1,6 +1,9 @@
 # RPC Budget
 
 RPC_BUDGET_REVISION: 80f80ac5b6a06c2b3c694d8c663b955f5b42e134
+RPC_BUDGET_REVISION_ROLE: FRONTEND_SOURCE_COMMIT
+PACKAGE_BASE_HEAD: bfa7ef949ebc881b84626c34b31e783f7be6e46e
+PACKAGE_HEAD_NOTE: current candidate is a documentation-only descendant; exact candidate HEAD is supplied in the anonymous re-review receipt
 OFFICIAL_DOCS_CHECKED: GenLayerJS package `1.1.8` README and installed types checked 2026-09-05; current GenLayer transaction guidance is recorded in `E:\Genlayer\brain\Engineering and UI Quality Rules.md` and the compatibility form `waitForTransactionReceipt` is used because the installed package exposes that API.
 STUDIO_SCOPE: APPLICABLE
 FRONTEND_SCOPE: APPLICABLE
@@ -9,6 +12,35 @@ VERCEL_ALIAS: https://research-dataset-revision-checker.vercel.app
 VERCEL_INSPECTOR: https://vercel.com/pcong/research-dataset-revision-checker/25cHLvk5cBPpS5gaaNUYXXwCtF4z
 FRONTEND_E2E_CASE: vercel-e2e-final-20260905-01
 FRONTEND_E2E_ACCOUNT: 0x5D598f10a428fB2039edbC3aCE83351650B286E0
+
+## STUDIO RPC MEASUREMENT CAPABILITY PROBE
+
+STUDIO_CAPABILITY_PROBE_STATUS: COMPLETE
+STUDIO_MEASUREMENT_MODE: OBSERVABLE_ACTION_LEDGER
+STUDIO_MEASUREMENT_TIMING: RETROSPECTIVE_LEGACY
+STUDIO_CAPABILITY_PROBE_AT: 2026-09-05T23:35:14+07:00
+STUDIO_FIRST_ACTION_AT: NOT_RECOVERABLE_RETROSPECTIVE
+STUDIO_E2E_STARTED_AT: NOT_RECOVERABLE_RETROSPECTIVE
+STUDIO_CAPABILITY_TOOL_OR_API: retained Studio terminal views and the deployment/evidence manifest
+STUDIO_CAPABILITY_CHECK: inspected retained Studio deployment, transaction, terminal-receipt and authoritative-readback evidence; no request-level telemetry was exposed
+STUDIO_CAPABILITY_RESULT: physical network requests are not exposed; primary-AI Studio actions and outcomes are observable
+STUDIO_PHYSICAL_COUNT_SOURCE: NOT_APPLICABLE
+STUDIO_PHYSICAL_COUNT_CLAIM: NONE
+STUDIO_REPLAY_FOR_MEASUREMENT: NO
+
+## STUDIO RPC ACTION LEDGER
+
+STUDIO_ACTION_LEDGER_STATUS: COMPLETE
+STUDIO_PHYSICAL_REQUESTS: NOT_APPLICABLE
+STUDIO_ACTIONS: 8
+STUDIO_TRANSACTIONS: 6
+STUDIO_TRANSACTION_HASHES: [0x0b5a8f7183dd05b075eba9c7cdb5d0fdb05715a4085b3e5d0cd379f9902a675d, 0xfce9894ad68cf2c6d12952e4df4fce188e95095634ede37c7fb7bfc990fc75a4, 0xb96a2d12d803d3e3fdef0ba3f324af09879fb7e7223beae6a04b99ad0e4f97b5, 0x7ce720dd76863326805eea905d82117117bd1b6f24616443bab2164957ad0864, 0x3d20f4ec8cd42c61cc0f405ba4ebd6b082976b659cc2033df5eccb67c9014366, 0xc05a10a684381750293c45db0119acb0c7a3e8dddbe4a466de902fce777838d6]
+STUDIO_STATUS_POLL_ATTEMPTS: 0
+STUDIO_TERMINAL_RECEIPT_READS: 6
+STUDIO_AUTHORITATIVE_READBACKS: 7
+STUDIO_RETRIES: 0
+STUDIO_DUPLICATE_TRANSACTIONS: 1
+STUDIO_MATRIX_VARIANCE: retrospective legacy ledger; exact historical status-poll telemetry is not recoverable; zero status-poll attempts means no separately retained primary-AI poll attempt, not zero physical requests; one duplicate register replay was intentional evidence, not an accidental resubmission; no deployment or write was replayed for measurement
 
 ## STUDIO RPC BUDGET MATRIX
 
@@ -46,7 +78,7 @@ MULTI_CLIENT_JUSTIFICATION: One shared `readClient` is used for reads, finality 
 | Write preflight | selected provider + shared read client | `eth_chainId`, `eth_getBalance` | one explicit write button | no cache for balance/chain | single-flight UI state | invalidate on write/account/network/disconnect | none | no retry | 2 per write; 8 across 4 writes | 0 | selected provider, Studionet and funded account verified |
 | SDK submission | installed `genlayer-js@1.1.8` | `eth_getTransactionCount`, `eth_estimateGas`, `eth_gasPrice`, `eth_sendTransaction` | one explicit write button | no cache | one submission per action | n/a | none | no automatic resubmission | 4 per write; 16 across 4 writes | 1 per write | wallet returns one hash |
 | Finality and semantic verification | shared read client | `waitForTransactionReceipt` → one `eth_getTransactionByHash` per poll | returned hash | no transaction cache | 3s, max 50 attempts | bounded SDK surface; no resubmission | invalidate after terminal write | one retained hash | 1 app-level wait per write; raw poll count is bounded by 50 and not exposed by installed SDK | 0 | `FINALIZED`, semantic success and consensus checked |
-| Authoritative readback | shared read client | `gen_call` (`get_case`) | post-write reconciliation or explicit View saved case details | `chain:contract:method:args`, 5s safe TTL | identical in-flight reads coalesce | invalidate after every write | none | user-triggered retry only | 5 observed app-level readbacks: 4 post-write + 1 explicit lookup | 0 | expected case state/outcome/retry count |
+| Authoritative readback | shared read client | `gen_call` (`get_case`) | post-write reconciliation or explicit View saved case details | `chain:contract:method:args`, 5s safe TTL | identical in-flight reads coalesce | invalidate after every write | none | user-triggered retry only | 6 observed app-level readbacks: 1 configuration preflight + 4 post-write + 1 post-reconnect lookup | 0 | expected case state/outcome/retry count |
 
 ## FRONTEND RPC BUDGET EVIDENCE
 
