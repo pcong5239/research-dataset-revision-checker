@@ -4,10 +4,10 @@ RPC_BUDGET_REVISION: 80f80ac5b6a06c2b3c694d8c663b955f5b42e134
 OFFICIAL_DOCS_CHECKED: GenLayerJS package `1.1.8` README and installed types checked 2026-09-05; current GenLayer transaction guidance is recorded in `E:\Genlayer\brain\Engineering and UI Quality Rules.md` and the compatibility form `waitForTransactionReceipt` is used because the installed package exposes that API.
 STUDIO_SCOPE: APPLICABLE
 FRONTEND_SCOPE: APPLICABLE
-VERCEL_DEPLOYMENT_ID: dpl_FHqfv1KJQwAkp1oMUsvkCUpJX3RZ
+VERCEL_DEPLOYMENT_ID: dpl_25cHLvk5cBPpS5gaaNUYXXwCtF4z
 VERCEL_ALIAS: https://research-dataset-revision-checker.vercel.app
-VERCEL_INSPECTOR: https://vercel.com/pcong/research-dataset-revision-checker/FHqfv1KJQwAkp1oMUsvkCUpJX3RZ
-FRONTEND_E2E_CASE: vercel-e2e-repaired-20260905-01
+VERCEL_INSPECTOR: https://vercel.com/pcong/research-dataset-revision-checker/25cHLvk5cBPpS5gaaNUYXXwCtF4z
+FRONTEND_E2E_CASE: vercel-e2e-final-20260905-01
 FRONTEND_E2E_ACCOUNT: 0x5D598f10a428fB2039edbC3aCE83351650B286E0
 
 ## STUDIO RPC BUDGET MATRIX
@@ -53,23 +53,23 @@ MULTI_CLIENT_JUSTIFICATION: One shared `readClient` is used for reads, finality 
 FRONTEND_EVIDENCE_STATUS: COMPLETE
 FRONTEND_E2E_STATUS: PASS
 
-The exact repaired Vercel deployment was tested continuously in Chrome with the separate OKX Wallet account above. The browser journey recorded: clean load and reload with zero contract reads and zero automatic account requests; two picker openings with zero account requests; one explicit provider selection; four unique state-changing writes; one wallet confirmation for each write; four retained transaction hashes; four terminal `FINALIZED`/semantic-success/readback outcomes; one explicit saved-case lookup; Disconnect; reload to disconnected; and fresh picker selection/reconnect. No duplicate write or automatic resubmission occurred. The final deployment changed only an unrendered SVG comment after the functional run; the JavaScript bundle, styles, contract address and transaction path were unchanged, and the final deployment was revalidated at clean load. The installed SDK owns the per-attempt `eth_getTransactionByHash` loop and exposes no public per-attempt counter; the exact interval/max-attempt contract and terminal condition are recorded above rather than inventing a timestamp-derived count.
+The exact configured Vercel deployment was tested continuously in Chrome with the separate OKX Wallet account above. The browser journey recorded: clean load and reload with zero contract reads and zero automatic account requests; two picker openings with zero account requests before explicit selection; two successful explicit provider selections; two observed wallet cancellations during assess recovery with no submission; four unique state-changing writes; one wallet confirmation for each successful write; four retained transaction hashes; four terminal `FINALIZED`/semantic-success/readback outcomes; one configuration readback before the journey; one post-reconnect saved-case readback; Disconnect; reload to disconnected; and fresh picker selection/reconnect. No duplicate write or automatic resubmission occurred. The deployment includes the Production `VITE_CONTRACT_ADDRESS` binding for the exact deployed contract, and the exact bundle/configuration readback was verified before the journey. The installed SDK owns the per-attempt `eth_getTransactionByHash` loop and exposes no public per-attempt counter; the exact interval/max-attempt contract and terminal condition are recorded above rather than inventing a timestamp-derived count.
 
 | Screen/workflow | Request source/method | Actual requests | Cache hit/miss | In-flight dedupe | Poll attempts | Retry/delay | Invalidations | Readback calls | Actual transactions | Variance/result |
 |---|---|---:|---|---|---:|---|---:|---:|---:|---|
-| Exact Vercel release: clean load, picker, reconnect, register, freeze, assess, retry, readback, disconnect, reload/reconnect | Chrome UI + selected OKX provider + shared `genlayer-js@1.1.8` client | 3 provider selection calls; 2 preflight calls + 4 SDK submission calls + 1 `gen_call` readback per write; 1 `eth_getTransactionByHash` per bounded 3s poll | no cache for identity, balance or transaction; safe case-read cache invalidated after writes | single-flight write and coalesced case reads | 3s, max 50; terminal polling stopped before readback | 0 retries/resubmissions | 4 write invalidations; 1 explicit lookup | 5 `get_case` calls at app boundary | 4 (`register_case`, `freeze_case`, `assess`, `retry_unresolved`) | PASS; all four hashes independently checked as `FINALIZED`, `MAJORITY_AGREE`, leader `SUCCESS`, EVM `0x1`; readbacks `REGISTERED`, `FROZEN`, `ASSESSED`, `ASSESSED` with retry `1` |
+| Exact configured Vercel release: clean load, picker, reconnect, register, freeze, assess, retry, readback, disconnect, reload/reconnect | Chrome UI + selected OKX provider + shared `genlayer-js@1.1.8` client | 2 successful provider selections; 2 preflight calls + 4 SDK submission calls + 1 `gen_call` readback per write; 1 `eth_getTransactionByHash` per bounded 3s poll | no cache for identity, balance or transaction; safe case-read cache invalidated after writes | single-flight write and coalesced case reads | 3s, max 50; terminal polling stopped before readback | 0 transaction retries/resubmissions; 2 wallet-cancelled attempts had no submission | 4 write invalidations; 2 explicit lookups | 6 `get_case` calls at app boundary | 4 (`register_case`, `freeze_case`, `assess`, `retry_unresolved`) | PASS; all four hashes independently checked as `FINALIZED`, `MAJORITY_AGREE`, successful validator execution, EVM `0x1`; readbacks `REGISTERED`, `FROZEN`, `ASSESSED`, `ASSESSED` with retry `1` |
 | Local functional regression | Vitest provider/progress/recovery fixtures | measured test calls only | n/a | covered | n/a | rejection and reconciliation covered | covered by source assertions | covered by postcondition tests | 0 | PASS; 50/50 tests |
 
 ### Exact Vercel write evidence
 
 | Operation | Transaction hash | Browser terminal/readback | Independent RPC terminal evidence |
 |---|---|---|---|
-| Register case | `0x19641cde6529cd3781374c0f0b37437e059bb0a7a2a5023791cdabb06e42d794` | `REGISTERED`, `UNRESOLVED`, retry `0` | `FINALIZED`, `MAJORITY_AGREE`, leader `SUCCESS`, EVM receipt `0x1` |
-| Freeze case | `0xc61fab10c500a2c108ea99d7cd81e66c936a427b8861aae7049913b869ecf074` | `FROZEN`, `UNRESOLVED`, retry `0` | `FINALIZED`, `MAJORITY_AGREE`, leader `SUCCESS`, EVM receipt `0x1` |
-| Assess case | `0xcf27a0a3f117cfd8f1b65afa0c639a91acbac4b3fbd96e7a2e4265aeaa8c607e` | `ASSESSED`, `UNRESOLVED`, retry `0` | `FINALIZED`, `MAJORITY_AGREE`, leader `SUCCESS`, EVM receipt `0x1` |
-| Retry unresolved | `0xd0221b1c6c4a48147b42920ccd581b86680a3eed69e4f34b7c9ccd58b6a14026` | `ASSESSED`, `UNRESOLVED`, retry `1` | `FINALIZED`, `MAJORITY_AGREE`, leader `SUCCESS`, EVM receipt `0x1` |
+| Register case | `0x76b782bba4c46d9c50a9734aeb81953d02be50bff11f4c5512fe1282a063a311` | `REGISTERED`, `UNRESOLVED`, retry `0` | `FINALIZED`, `MAJORITY_AGREE`, successful validator execution, EVM receipt `0x1` |
+| Freeze case | `0xe68f6314e5ec8259e5313cc3963bbc9cb9e31dcaf8f198188c3fa64368c35416` | `FROZEN`, `UNRESOLVED`, retry `0` | `FINALIZED`, `MAJORITY_AGREE`, successful validator execution, EVM receipt `0x1` |
+| Assess case | `0x4c0dc3e6d9e962fb07362387e6581e778dd78df8b08b2619e066556eef9bd47e` | `ASSESSED`, `UNRESOLVED`, retry `0` | `FINALIZED`, `MAJORITY_AGREE`, successful validator execution, EVM receipt `0x1` |
+| Retry unresolved | `0xd5762d9e97fe85b60187200817dbf2a7c018a13fceca6f147d4819e224178174` | `ASSESSED`, `UNRESOLVED`, retry `1` | `FINALIZED`, `MAJORITY_AGREE`, successful validator execution, EVM receipt `0x1` |
 
-All four transaction and contract links use `https://explorer-studio.genlayer.com` and resolved successfully during the release preflight/E2E checks.
+All four transaction and contract links use `https://explorer-studio.genlayer.com` and resolved successfully during the exact configured release preflight/E2E checks. The two cancelled assess attempts are recorded as rejection coverage with no transaction hash and no state change.
 
 ## Closure
 
