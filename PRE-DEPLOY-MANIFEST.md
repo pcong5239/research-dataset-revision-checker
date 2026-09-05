@@ -12,7 +12,8 @@
 - Constructor arguments: none
 - Studio deployer/E2E account: `0x34b92E6553eaCA11A00A9d86d75d8a7881779D78`
 - Account role: deployer and Studio E2E operator
-- Functional frontend release commit: c5660a43ba602250c6007ff360295053645e5b76
+- Functional frontend release commit: b26d9dc
+- Functional frontend correction scope: canonical wallet discovery/options/icons, duplicate-write prevention, and persisted transaction-hash reconciliation.
 - Public evidence baseline commit: 9c10927e1760aa84195cbafa5b87198eed3bcc11
 - Functional frontend commit: `76ed133425336443af4155dceef87813c521ed6f`
 - Linked contracts: none

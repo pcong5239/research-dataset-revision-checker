@@ -11,7 +11,8 @@ This is the consolidated reviewer-facing verification record for the exact deplo
 - Contract: https://explorer-studio.genlayer.com/address/0x3d5Ff07e8492d8a9eE8E333bdBCFb0B447447ea1
 - Deployment transaction: https://explorer-studio.genlayer.com/tx/0x0b5a8f7183dd05b075eba9c7cdb5d0fdb05715a4085b3e5d0cd379f9902a675d
 - Functional frontend baseline: 76ed133425336443af4155dceef87813c521ed6f
-- Functional frontend release commit: c5660a43ba602250c6007ff360295053645e5b76
+- Functional frontend release commit: b26d9dc
+- Functional frontend correction scope: canonical wallet discovery/options/icons, duplicate-write prevention, and persisted transaction-hash reconciliation.
 - Public repository: https://github.com/pcong5239/research-dataset-revision-checker
 - Current public release is a frozen contract; a defect requires replacement deployment and has no public upgrade method.
 
