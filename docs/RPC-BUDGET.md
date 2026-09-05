@@ -1,11 +1,12 @@
 # RPC Budget
 
-RPC_BUDGET_REVISION: 68f55afc1d12640710fa44029fabb2df24f745d2
+RPC_BUDGET_REVISION: 80f80ac5b6a06c2b3c694d8c663b955f5b42e134
 OFFICIAL_DOCS_CHECKED: GenLayerJS package `1.1.8` README and installed types checked 2026-09-05; current GenLayer transaction guidance is recorded in `E:\Genlayer\brain\Engineering and UI Quality Rules.md` and the compatibility form `waitForTransactionReceipt` is used because the installed package exposes that API.
 STUDIO_SCOPE: APPLICABLE
 FRONTEND_SCOPE: APPLICABLE
-VERCEL_DEPLOYMENT_ID: dpl_Hb7Ussy8DBd4zRvFGUf9sq3nGSeS
+VERCEL_DEPLOYMENT_ID: dpl_FHqfv1KJQwAkp1oMUsvkCUpJX3RZ
 VERCEL_ALIAS: https://research-dataset-revision-checker.vercel.app
+VERCEL_INSPECTOR: https://vercel.com/pcong/research-dataset-revision-checker/FHqfv1KJQwAkp1oMUsvkCUpJX3RZ
 FRONTEND_E2E_CASE: vercel-e2e-repaired-20260905-01
 FRONTEND_E2E_ACCOUNT: 0x5D598f10a428fB2039edbC3aCE83351650B286E0
 
@@ -52,7 +53,7 @@ MULTI_CLIENT_JUSTIFICATION: One shared `readClient` is used for reads, finality 
 FRONTEND_EVIDENCE_STATUS: COMPLETE
 FRONTEND_E2E_STATUS: PASS
 
-The exact repaired Vercel deployment was tested continuously in Chrome with the separate OKX Wallet account above. The browser journey recorded: clean load and reload with zero contract reads and zero automatic account requests; two picker openings with zero account requests; one explicit provider selection; four unique state-changing writes; one wallet confirmation for each write; four retained transaction hashes; four terminal `FINALIZED`/semantic-success/readback outcomes; one explicit saved-case lookup; Disconnect; reload to disconnected; and fresh picker selection/reconnect. No duplicate write or automatic resubmission occurred. The installed SDK owns the per-attempt `eth_getTransactionByHash` loop and exposes no public per-attempt counter; the exact interval/max-attempt contract and terminal condition are recorded above rather than inventing a timestamp-derived count.
+The exact repaired Vercel deployment was tested continuously in Chrome with the separate OKX Wallet account above. The browser journey recorded: clean load and reload with zero contract reads and zero automatic account requests; two picker openings with zero account requests; one explicit provider selection; four unique state-changing writes; one wallet confirmation for each write; four retained transaction hashes; four terminal `FINALIZED`/semantic-success/readback outcomes; one explicit saved-case lookup; Disconnect; reload to disconnected; and fresh picker selection/reconnect. No duplicate write or automatic resubmission occurred. The final deployment changed only an unrendered SVG comment after the functional run; the JavaScript bundle, styles, contract address and transaction path were unchanged, and the final deployment was revalidated at clean load. The installed SDK owns the per-attempt `eth_getTransactionByHash` loop and exposes no public per-attempt counter; the exact interval/max-attempt contract and terminal condition are recorded above rather than inventing a timestamp-derived count.
 
 | Screen/workflow | Request source/method | Actual requests | Cache hit/miss | In-flight dedupe | Poll attempts | Retry/delay | Invalidations | Readback calls | Actual transactions | Variance/result |
 |---|---|---:|---|---|---:|---|---:|---:|---:|---|
